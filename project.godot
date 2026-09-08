@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Eggs"
-run/main_scene="uid://k133jij7xuif"
+run/main_scene="res://scenes/main_island.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
 config/icon="res://icon.svg"
 
@@ -26,8 +26,6 @@ PhantomCameraManager="*uid://duq6jhf6unyis"
 InputHelper="*uid://cholww48njaeh"
 SoundManager="*uid://6q1wagejt60k"
 _mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
-SceneManager="*uid://2iy8wfgenjka"
-Scenes="*uid://bhpqiqnk2f3o"
 
 [display]
 
