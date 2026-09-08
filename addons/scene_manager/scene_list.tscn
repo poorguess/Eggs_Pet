@@ -1,10 +1,10 @@
-[gd_scene load_steps=4 format=3 uid="uid://7r0ywsv3ga6g"]
+[gd_scene format=3 uid="uid://7r0ywsv3ga6g"]
 
-[ext_resource type="Script" path="res://addons/scene_manager/scene_list.gd" id="2"]
-[ext_resource type="Texture2D" uid="uid://dw322nmqpqwfq" path="res://addons/scene_manager/icons/ImportFail.svg" id="3"]
-[ext_resource type="Texture2D" uid="uid://d250i5cu8lgbd" path="res://addons/scene_manager/icons/eye_open.png" id="4_u7g41"]
+[ext_resource type="Script" uid="uid://1q8a2hkfmhi7" path="res://addons/scene_manager/scene_list.gd" id="2"]
+[ext_resource type="Texture2D" uid="uid://b4vwk1dcmxg86" path="res://addons/scene_manager/icons/ImportFail.svg" id="3"]
+[ext_resource type="Texture2D" uid="uid://bdjoorlv7u31f" path="res://addons/scene_manager/icons/eye_open.png" id="4_u7g41"]
 
-[node name="scene_list" type="VBoxContainer"]
+[node name="scene_list" type="VBoxContainer" unique_id=1565162197]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -12,25 +12,25 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("2")
 
-[node name="_title" type="HBoxContainer" parent="."]
+[node name="_title" type="HBoxContainer" parent="." unique_id=1577102436]
 layout_mode = 2
 
-[node name="delete_list" type="Button" parent="_title"]
+[node name="delete_list" type="Button" parent="_title" unique_id=1112807257]
 custom_minimum_size = Vector2(28, 28)
 layout_mode = 2
 icon = ExtResource("3")
 
-[node name="hidden" type="Button" parent="_title"]
+[node name="hidden" type="Button" parent="_title" unique_id=1647324339]
 custom_minimum_size = Vector2(28, 28)
 layout_mode = 2
 icon = ExtResource("4_u7g41")
 
-[node name="scenes" type="ScrollContainer" parent="."]
+[node name="scenes" type="ScrollContainer" parent="." unique_id=891212372]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="container" type="VBoxContainer" parent="scenes"]
+[node name="container" type="VBoxContainer" parent="scenes" unique_id=470486583]
 layout_mode = 2
 size_flags_horizontal = 3
 

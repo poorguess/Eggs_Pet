@@ -1,20 +1,20 @@
-[gd_scene load_steps=3 format=3 uid="uid://ciaqe7l3hugns"]
+[gd_scene format=3 uid="uid://ciaqe7l3hugns"]
 
-[ext_resource type="Texture2D" uid="uid://dw322nmqpqwfq" path="res://addons/scene_manager/icons/ImportFail.svg" id="1"]
-[ext_resource type="Script" path="res://addons/scene_manager/ignore_item.gd" id="2"]
+[ext_resource type="Texture2D" uid="uid://b4vwk1dcmxg86" path="res://addons/scene_manager/icons/ImportFail.svg" id="1"]
+[ext_resource type="Script" uid="uid://cttee7l6emuuj" path="res://addons/scene_manager/ignore_item.gd" id="2"]
 
-[node name="item" type="HBoxContainer"]
+[node name="item" type="HBoxContainer" unique_id=2078537979]
 offset_top = 24.0
 offset_right = 280.0
 offset_bottom = 48.0
 script = ExtResource("2")
 
-[node name="remove_at" type="Button" parent="."]
+[node name="remove_at" type="Button" parent="." unique_id=713618052]
 custom_minimum_size = Vector2(28, 28)
 layout_mode = 2
 icon = ExtResource("1")
 
-[node name="address" type="LineEdit" parent="."]
+[node name="address" type="LineEdit" parent="." unique_id=426728966]
 layout_mode = 2
 size_flags_horizontal = 3
 editable = false
