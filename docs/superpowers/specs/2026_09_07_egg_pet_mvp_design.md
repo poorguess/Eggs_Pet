@@ -187,6 +187,8 @@ Implement Minigame Hub, Bubble Survivor, player movement, automatic bubble attac
 
 ## Verification
 
+Pet appearance customization is specified separately in [Face Customization Module](2026-09-10-face-customization-design.md). It changes appearance only and preserves the care and minigame boundaries in this document.
+
 MVP verification should confirm:
 
 - Core state values remain within bounds.

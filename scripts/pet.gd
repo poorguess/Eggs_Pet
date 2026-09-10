@@ -14,6 +14,7 @@ const FRAME_COUNT := 33
 @export var walk_fps := 10.0
 
 var sprite: Sprite2D
+var features: PetFaceOverlay
 var _state := "idle"
 var _fps := 8.0
 var _frame_clock := 0.0
@@ -71,3 +72,9 @@ func play_walk() -> void:
 	sprite.flip_h = (_target.x > position.x) == default_faces_left
 	_state = "walk"
 	_fps = walk_fps
+
+func apply_features(texture: Texture2D, profile: PetFaceProfile, track: PetFaceTrack) -> String:
+	if features == null:
+		features = PetFaceOverlay.new()
+		sprite.add_child(features)
+	return features.configure(sprite, track, texture, profile)

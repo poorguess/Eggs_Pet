@@ -1,6 +1,6 @@
 extends Node2D
 
-const EGG_TEXTURE := "res://assets/eggs_pics/egg1.png"
+const EGG_TEXTURE := "res://assets/eggs_pics/Newegg.png"
 
 var font: Font
 var egg: Sprite2D
@@ -31,7 +31,7 @@ func _exit_tree() -> void:
 func _process(delta: float) -> void:
 	float_clock += delta
 	var size := get_viewport().get_visible_rect().size
-	egg.position = Vector2(size.x * 0.5, size.y * 0.4 + sin(float_clock * PI) * 3.0)
+	egg.position = Vector2(size.x * 0.5, size.y * 0.5 + sin(float_clock * PI) * 3.0)
 	queue_redraw()
 
 func _unhandled_input(event: InputEvent) -> void:

@@ -38,6 +38,7 @@ static func save_data(data: Dictionary) -> void:
 		file.store_string(JSON.stringify(data))
 
 static func reset() -> void:
+	PetFaceProfile.reset_saved()
 	for path in [PATH, FACE_PATH, PET_LOOK_PATH]:
 		if FileAccess.file_exists(path):
 			DirAccess.remove_absolute(path)
