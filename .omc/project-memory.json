@@ -1,0 +1,169 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1788948628169,
+  "projectRoot": "/Library/WorkSpaceGodot/eggs",
+  "techStack": {
+    "languages": [],
+    "frameworks": [],
+    "packageManager": null,
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "assets",
+      "docs",
+      "scripts"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "addons": {
+      "path": "addons",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1788948628148,
+      "keyFiles": []
+    },
+    "android": {
+      "path": "android",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1788948628148,
+      "keyFiles": []
+    },
+    "assets": {
+      "path": "assets",
+      "purpose": "Static assets",
+      "fileCount": 0,
+      "lastAccessed": 1788948628148,
+      "keyFiles": []
+    },
+    "build": {
+      "path": "build",
+      "purpose": "Build output",
+      "fileCount": 1,
+      "lastAccessed": 1788948628149,
+      "keyFiles": [
+        "eggs-debug.apk"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 2,
+      "lastAccessed": 1788948628149,
+      "keyFiles": [
+        "face_swap_prompt.md",
+        "ui_style_guide.md"
+      ]
+    },
+    "ios": {
+      "path": "ios",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1788948628150,
+      "keyFiles": []
+    },
+    "scenes": {
+      "path": "scenes",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1788948628150,
+      "keyFiles": [
+        "main_island.tscn",
+        "start_screen.tscn"
+      ]
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 20,
+      "lastAccessed": 1788948628150,
+      "keyFiles": [
+        "care_state.gd",
+        "care_state.gd.uid",
+        "face_api.gd",
+        "face_api.gd.uid",
+        "face_camera.gd"
+      ]
+    },
+    "android/build": {
+      "path": "android/build",
+      "purpose": "Build output",
+      "fileCount": 7,
+      "lastAccessed": 1788948628152,
+      "keyFiles": [
+        "build.gradle",
+        "config.gradle",
+        "gradle.properties"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "scripts/face_api.gd",
+      "accessCount": 51,
+      "lastAccessed": 1789005977865,
+      "type": "file"
+    },
+    {
+      "path": "scripts/main_island.gd",
+      "accessCount": 28,
+      "lastAccessed": 1789005998831,
+      "type": "file"
+    },
+    {
+      "path": "scripts/pet.gd",
+      "accessCount": 5,
+      "lastAccessed": 1788953517160,
+      "type": "file"
+    },
+    {
+      "path": "docs/face_swap_prompt.md",
+      "accessCount": 5,
+      "lastAccessed": 1788953793746,
+      "type": "file"
+    },
+    {
+      "path": "scripts/face_camera.gd",
+      "accessCount": 3,
+      "lastAccessed": 1788953148592,
+      "type": "file"
+    },
+    {
+      "path": "assets/pets/shell_pudding.png",
+      "accessCount": 1,
+      "lastAccessed": 1788951272705,
+      "type": "file"
+    },
+    {
+      "path": "scripts/growth_state.gd",
+      "accessCount": 1,
+      "lastAccessed": 1788952981234,
+      "type": "file"
+    },
+    {
+      "path": "scripts/save_service.gd",
+      "accessCount": 1,
+      "lastAccessed": 1788953117848,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

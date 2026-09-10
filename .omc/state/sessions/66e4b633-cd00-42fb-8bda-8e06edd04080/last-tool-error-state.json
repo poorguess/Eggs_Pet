@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"adb devices && cat install_apk.sh\",\"description\":\"Check device connection and install script\"}",
+  "error": "Exit code 127\n(eval):1: command not found: adb",
+  "timestamp": "2026-09-10T02:27:15.575Z",
+  "retry_count": 1
+}

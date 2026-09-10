@@ -1,12 +1,6 @@
-[gd_scene format=3 uid="uid://k133jij7xuif"]
+[gd_scene format=3 uid="uid://crluil1nm4hd4"]
 
-[ext_resource type="Texture2D" uid="uid://c3cf5718pdgqm" path="res://eggs_pics/egg1.png" id="1_phef7"]
-[ext_resource type="Script" uid="uid://3ucr7we3i0hi" path="res://scripts/egg_1.gd" id="2_26tib"]
+[ext_resource type="Script" uid="uid://dgfuerfecoe1g" path="res://scripts/main_island.gd" id="1_main"]
 
-[node name="MainIsland" type="Node2D" unique_id=838440765]
-
-[node name="Egg1" type="Sprite2D" parent="." unique_id=1672978163]
-position = Vector2(573.00006, 327)
-scale = Vector2(0.72927684, 0.6279683)
-texture = ExtResource("1_phef7")
-script = ExtResource("2_26tib")
+[node name="MainIsland" type="Node2D" unique_id=1256255717]
+script = ExtResource("1_main")
