@@ -1,11 +1,22 @@
 extends Node2D
 
-const EGG_TEXTURE := "res://assets/eggs_pics/egg1.png"
+const EGG_IDLE_SHEET := "res://assets/eggs_pics/Eggidle.png"
+const EGG_BROKEN_SHEET := "res://assets/eggs_pics/Eggbroken.png"
+const EGG_SHEET_COLUMNS := 4
+const EGG_IDLE_ROWS := 14
+const EGG_BROKEN_ROWS := 15
 const FACE_SAVE_PATH := "user://face.png"
 const PET_LOOK_SAVE_PATH := "user://pet_look.png"
 const CAMERA_ICON := "res://assets/ui/camera.png"
 const CHECK_ICON := "res://assets/ui/check.png"
+const FACE_TRACK := preload("res://assets/pets/face_tracks/character1_walk.tres")
+const FACE_CUSTOMIZER := preload("res://scenes/face_customizer.tscn")
 const CROSS_ICON := "res://assets/ui/cross.png"
+
+var feature_profile := PetFaceProfile.new()
+var feature_image: Image
+var customizer: FaceCustomizer
+var customizer_layer: CanvasLayer
 
 var care := CareState.new()
 var growth := GrowthState.new()
@@ -15,7 +26,7 @@ var toast_time := 3.5
 var save_clock := 0.0
 var hatch_flash := 0.0
 var pet_bounce := 0.0
-var egg_sprite: Sprite2D
+var egg_sprite: AnimatedSprite2D
 var font: Font
 var camera_icon: Texture2D
 var check_icon: Texture2D
@@ -66,16 +77,58 @@ func _ready() -> void:
 	_load_save()
 	_create_egg_sprite()
 	_ensure_pet()
+	_load_features()
 	_sync_pet_visibility()
 	queue_redraw()
 
 func _create_egg_sprite() -> void:
-	egg_sprite = Sprite2D.new()
-	egg_sprite.texture = load(EGG_TEXTURE)
-	egg_sprite.position = Vector2(575, 285)
-	egg_sprite.scale = Vector2(0.24, 0.24)
+	egg_sprite = AnimatedSprite2D.new()
+	egg_sprite.sprite_frames = _create_egg_animations()
+	egg_sprite.animation = &"idle"
+	egg_sprite.position = _egg_animation_position()
+	egg_sprite.scale = Vector2(0.82, 0.82)
 	egg_sprite.z_index = -1
 	add_child(egg_sprite)
+	egg_sprite.animation_finished.connect(_on_egg_animation_finished)
+	egg_sprite.play(&"idle")
+
+func _create_egg_animations() -> SpriteFrames:
+	var frames := SpriteFrames.new()
+	frames.remove_animation(&"default")
+	_add_egg_sheet_animation(frames, &"idle", EGG_IDLE_SHEET, EGG_IDLE_ROWS, 8.0, true)
+	_add_egg_sheet_animation(frames, &"broken", EGG_BROKEN_SHEET, EGG_BROKEN_ROWS, 12.0, false)
+	return frames
+
+func _add_egg_sheet_animation(frames: SpriteFrames, name: StringName, path: String, rows: int, fps: float, loop: bool) -> void:
+	var sheet := load(path) as Texture2D
+	if sheet == null:
+		push_error("Could not load egg animation sheet: " + path)
+		return
+	frames.add_animation(name)
+	frames.set_animation_speed(name, fps)
+	frames.set_animation_loop(name, loop)
+	var frame_width := sheet.get_width() / EGG_SHEET_COLUMNS
+	var frame_height := float(sheet.get_height()) / rows
+	for row in range(rows):
+		for column in range(EGG_SHEET_COLUMNS):
+			var frame := AtlasTexture.new()
+			frame.atlas = sheet
+			frame.region = Rect2(column * frame_width, row * frame_height, frame_width, frame_height)
+			frames.add_frame(name, frame)
+
+func _on_egg_animation_finished() -> void:
+	if stage != "hatching" or egg_sprite.animation != &"broken":
+		return
+	stage = "pet"
+	hatch_flash = 1.2
+	_ensure_pet()
+	pet.roam_center = _egg_animation_position()
+	pet.position = pet.roam_center
+	pet.play_idle()
+	_sync_pet_visibility()
+	toast = "壳壳布丁来到岛上了。"
+	toast_time = 3.0
+	_save()
 
 func _ensure_pet() -> void:
 	if pet:
@@ -153,14 +206,22 @@ func _process(delta: float) -> void:
 		toast = "蛋壳裂开了一道缝，点「迎接破壳」吧。"
 		toast_time = 4.0
 		_save()
-	if stage == "egg":
+	if stage == "egg" or stage == "hatching":
 		egg_sprite.visible = true
-		egg_sprite.position.y = 285.0 + sin(pet_bounce * PI) * 3.0
+		var egg_position := _egg_animation_position()
+		if stage == "egg":
+			egg_sprite.position = egg_position + Vector2(0.0, sin(pet_bounce * PI) * 3.0)
+		else:
+			egg_sprite.position = egg_position
 	else:
 		egg_sprite.visible = false
 	queue_redraw()
 
 func _unhandled_input(event: InputEvent) -> void:
+	if customizer != null and customizer.visible:
+		if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+			_close_customizer()
+		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			_press_at(event.position)
@@ -194,7 +255,7 @@ func _press_at(point: Vector2) -> void:
 			target = "hatch" if growth.hatch_ready else "boost"
 		elif _face_button_rect().has_point(point):
 			target = "fab"
-		elif _creature_hit_rect().has_point(point) or _status_panel_rect(_canvas_size(), _safe_margins()).has_point(point):
+		elif stage != "hatching" and (_creature_hit_rect().has_point(point) or _status_panel_rect(_canvas_size(), _safe_margins()).has_point(point)):
 			target = "detail"
 	else:
 		match face_mode:
@@ -262,7 +323,7 @@ func _target_hit(target: String, point: Vector2) -> bool:
 func _activate(target: String) -> void:
 	match target:
 		"fab":
-			_set_face_mode("consent")
+			_open_customizer()
 		"boost":
 			growth.accelerate()
 			toast = "蛋壳里传来轻快的动静。"
@@ -318,14 +379,12 @@ func _do_hatch() -> void:
 	growth.hatch()
 	if not growth.hatched:
 		return
-	stage = "pet"
+	stage = "hatching"
 	growth.intimacy_points = maxf(growth.intimacy_points, 4.0)
 	hatched_at = Time.get_unix_time_from_system()
-	hatch_flash = 1.2
-	_ensure_pet()
-	_sync_pet_visibility()
-	toast = "壳壳布丁来到岛上了。"
+	toast = "蛋壳正在裂开……"
 	toast_time = 3.0
+	egg_sprite.play(&"broken")
 	_save()
 
 func _open_detail() -> void:
@@ -340,7 +399,11 @@ func _open_detail() -> void:
 func _set_face_mode(mode: String) -> void:
 	if face_mode == mode:
 		return
+	if mode == "" and customizer != null:
+		mode = "customize"
 	face_mode = mode
+	if customizer != null:
+		customizer.visible = mode == "customize"
 	if mode == "preview":
 		DisplayServer.screen_set_orientation(DisplayServer.SCREEN_SENSOR_PORTRAIT)
 	else:
@@ -433,24 +496,16 @@ func _cancel_face_flow() -> void:
 	pending_texture = null
 	_set_face_mode("")
 
-func _on_face_completed(image: Image, full_character: bool) -> void:
-	print("[FaceFlow] completed full_character=%s image=%dx%d" % [full_character, image.get_width(), image.get_height()])
-	if full_character:
-		var look := FaceApi.cutout_character(image)
-		pet_look_texture = ImageTexture.create_from_image(look)
-		look.save_png(PET_LOOK_SAVE_PATH)
-		_sync_pet_visibility()
-		toast = "壳壳布丁换上了你的脸。"
-	else:
-		face_texture = ImageTexture.create_from_image(_circle_avatar(image))
-		image.save_png(FACE_SAVE_PATH)
-		_sync_face_overlay()
-		toast = "新脸已就位，壳壳布丁变样了。"
+func _on_face_completed(image: Image, _full_character: bool) -> void:
+	var result := PetFaceImage.prepare(image)
+	if not String(result.error).is_empty():
+		_on_face_failed(result.error)
+		return
+	if customizer == null:
+		_open_customizer()
+	customizer.set_result(result.image)
 	pending_texture = null
 	_set_face_mode("")
-	toast_time = 3.0
-	_save()
-	queue_redraw()
 
 func _on_face_failed(message: String) -> void:
 	print("[FaceFlow] failed: %s" % message)
@@ -486,9 +541,11 @@ func _draw() -> void:
 		_draw_pet()
 	if stage == "egg":
 		_draw_hatch_timer(viewport, m)
+	elif stage == "hatching":
+		_draw_hatching_panel(viewport, m)
 	if face_mode == "":
 		_draw_face_button()
-	else:
+	elif face_mode != "customize":
 		_draw_face_overlay(viewport, m)
 	if detail_open:
 		_draw_detail(viewport)
@@ -514,6 +571,8 @@ func _draw_status(viewport: Vector2, m: Vector4) -> void:
 	var name_text := "壳壳布丁  ·  " + _intimacy_level_cn() if stage == "pet" else "一颗蛋  ·  孵化中"
 	if stage == "egg" and growth.hatch_ready:
 		name_text = "一颗蛋  ·  即将破壳"
+	elif stage == "hatching":
+		name_text = "一颗蛋  ·  正在破壳"
 	draw_string(font, panel.position + Vector2(24, 24 + font.get_ascent(UiTheme.FONT_BODY)), name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, UiTheme.FONT_BODY, UiTheme.INK)
 	_draw_stat_rows(panel.position + Vector2(0, 76))
 
@@ -531,7 +590,7 @@ func _draw_stat_rows(origin: Vector2, alpha: float = 1.0) -> void:
 		draw_string(font, Vector2(bar.end.x + 16.0, cy + font.get_ascent(UiTheme.FONT_HINT) * 0.35), str(int(round(values[i]))), HORIZONTAL_ALIGNMENT_LEFT, -1, UiTheme.FONT_HINT, UiTheme.fade(UiTheme.INK, alpha))
 
 func _draw_pet() -> void:
-	var p := Vector2(575, 292 + sin(pet_bounce * 2.0) * 4.0)
+	var p := _egg_animation_position() + Vector2(0.0, sin(pet_bounce * 2.0) * 4.0)
 	if hatch_flash > 0.0:
 		draw_circle(p, 106.0 * (1.2 - hatch_flash * 0.15), UiTheme.fade(UiTheme.LEMON, hatch_flash * 0.22))
 	if pet_look_texture:
@@ -557,6 +616,13 @@ func _draw_hatch_timer(viewport: Vector2, m: Vector4) -> void:
 		UiTheme.draw_string_outlined(self, font, Vector2(panel.position.x, panel.position.y + 134.0), number, HORIZONTAL_ALIGNMENT_CENTER, panel.size.x, UiTheme.FONT_COUNTDOWN, UiTheme.LEMON, UiTheme.INK, 2)
 		var press := _press_amount if _press_target == "boost" else 0.0
 		UiTheme.draw_candy_button(self, _hatch_boost_rect(), "加速 -5s", font, UiTheme.SKY, UiTheme.SKY_DARK, press)
+
+func _draw_hatching_panel(viewport: Vector2, m: Vector4) -> void:
+	var panel := _hatch_panel_rect(viewport, m)
+	UiTheme.draw_panel(self, panel, UiTheme.CREAM, UiTheme.RADIUS_PANEL)
+	UiTheme.draw_label_centered(self, font, Rect2(panel.position + Vector2(0, 42), Vector2(panel.size.x, 32)), "正在破壳", UiTheme.FONT_HINT, UiTheme.INK_SOFT)
+	UiTheme.draw_string_outlined(self, font, Vector2(panel.position.x, panel.position.y + 146.0), "✨", HORIZONTAL_ALIGNMENT_CENTER, panel.size.x, UiTheme.FONT_COUNTDOWN, UiTheme.LEMON, UiTheme.INK, 2)
+	UiTheme.draw_label_centered(self, font, Rect2(panel.position + Vector2(0, 198), Vector2(panel.size.x, 32)), "新的伙伴马上就要出现了", UiTheme.FONT_HINT, UiTheme.INK_SOFT)
 
 func _draw_face_button() -> void:
 	var rect := _face_button_rect()
@@ -727,7 +793,9 @@ func _draw_detail_pet(panel: Rect2, a: float) -> void:
 	draw_string(font, Vector2(x, panel.position.y + 262.0), _intimacy_hint(), HORIZONTAL_ALIGNMENT_LEFT, -1, UiTheme.FONT_HINT, soft)
 	_draw_stat_rows(Vector2(x - 24.0, panel.position.y + 304.0), a)
 	var look := "默认样貌"
-	if pet_look_texture:
+	if feature_image != null:
+		look = "已对齐你的五官（动画）"
+	elif pet_look_texture:
 		look = "已使用你的长相"
 	elif face_texture:
 		look = "漫画头像（简易模式）"
@@ -755,6 +823,9 @@ func _intimacy_level_cn() -> String:
 
 func _canvas_size() -> Vector2:
 	return get_viewport().get_visible_rect().size
+
+func _egg_animation_position() -> Vector2:
+	return _canvas_size() * 0.5 + Vector2(0.0, -70.0)
 
 # Vector4(left, top, right, bottom) in canvas units, at least 16px on every side.
 func _safe_margins() -> Vector4:
@@ -819,6 +890,8 @@ func _detail_close_rect() -> Rect2:
 	return Rect2(panel.end.x - 48.0 - 56.0, panel.position.y + 28.0, 56.0, 56.0)
 
 func _creature_hit_rect() -> Rect2:
+	if stage == "egg" and egg_sprite:
+		return Rect2(egg_sprite.position - Vector2(160, 100), Vector2(320, 200))
 	if pet_look_texture:
 		return Rect2(445.0, 120.0, 280.0, 320.0)
 	if pet and pet.visible:
@@ -849,3 +922,69 @@ func _save() -> void:
 	var data := {"stage": stage, "egg_type": "common_egg", "pet_species": "shell_pudding", "care": care.to_dict(), "has_face": face_texture != null, "has_pet_look": pet_look_texture != null, "created_at": created_at, "hatched_at": hatched_at}
 	data.merge(growth.to_dict())
 	SaveService.save_data(data)
+
+func _open_customizer() -> void:
+	if customizer != null:
+		return
+	customizer_layer = CanvasLayer.new()
+	customizer_layer.layer = 20
+	add_child(customizer_layer)
+	customizer = FACE_CUSTOMIZER.instantiate()
+	customizer_layer.add_child(customizer)
+	customizer.open(FACE_TRACK, feature_profile, feature_image)
+	customizer.photo_requested.connect(func() -> void: _set_face_mode("consent"))
+	customizer.service_configuration_saved.connect(face_api.reload_config)
+	customizer.cancelled.connect(_close_customizer)
+	customizer.applied.connect(_apply_features)
+	_set_face_mode("customize")
+
+func _close_customizer() -> void:
+	face_api.cancel()
+	face_camera.stop()
+	if customizer_layer != null:
+		customizer_layer.queue_free()
+	customizer = null
+	customizer_layer = null
+	pending_texture = null
+	_set_face_mode("")
+
+func _apply_features(image: Image, profile: PetFaceProfile) -> void:
+	if image == null:
+		return
+	var error := FACE_TRACK.validate()
+	if not error.is_empty():
+		customizer.set_error(error)
+		return
+	var save_error := profile.save_image(image)
+	if save_error != OK:
+		customizer.set_error("保存失败（%d），原外貌未更改。" % save_error)
+		return
+	feature_profile = profile
+	feature_image = image
+	pet.apply_features(ImageTexture.create_from_image(image), profile, FACE_TRACK)
+	pet_look_texture = null
+	face_texture = null
+	_close_customizer()
+	_save()
+	toast = "五官已对齐，继续跟随角色运动。"
+	toast_time = 3
+
+func _load_features() -> void:
+	feature_profile = PetFaceProfile.load_saved()
+	if feature_profile.image_path.is_empty() or not FileAccess.file_exists(feature_profile.image_path):
+		return
+	var image := Image.new()
+	if image.load(feature_profile.image_path) != OK:
+		push_warning("换脸模块：外貌图片读取失败，保留旧外貌。")
+		return
+	# Saved local cutouts need not match the model's coverage rules.
+	if image.detect_alpha() == Image.ALPHA_NONE or not image.get_used_rect().has_area():
+		push_warning("换脸模块：已保存图片缺少透明区域或有效五官。")
+		return
+	var error := pet.apply_features(ImageTexture.create_from_image(image), feature_profile, FACE_TRACK)
+	if not error.is_empty():
+		push_warning("换脸模块：" + error)
+		return
+	feature_image = image
+	pet_look_texture = null
+	face_texture = null
