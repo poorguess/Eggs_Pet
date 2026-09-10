@@ -2,6 +2,8 @@ extends Node2D
 class_name Pet
 
 const SHEET := preload("res://assets/pets/character1.png")
+const HFRAMES := 4
+const VFRAMES := 9
 const FRAME_COUNT := 33
 
 @export var roam_center := Vector2(960, 400)
@@ -25,8 +27,8 @@ var _speed := 70.0
 func _ready() -> void:
 	sprite = Sprite2D.new()
 	sprite.texture = SHEET
-	sprite.hframes = 4
-	sprite.vframes = 9
+	sprite.hframes = HFRAMES
+	sprite.vframes = VFRAMES
 	sprite.frame = 0
 	add_child(sprite)
 	scale = Vector2.ONE * pet_scale
@@ -58,6 +60,11 @@ func _process(delta: float) -> void:
 
 func _ellipse_distance(p: Vector2) -> float:
 	return ((p - roam_center) / roam_radius).length()
+
+# 换脸烘焙结果只替换纹理像素；帧网格、帧动画、漫游、转向逻辑全部不变。
+# 烘焙表与原始 SHEET 同尺寸，Sprite2D 的帧切分区域无需任何调整。
+func apply_look_sheet(sheet_image: Image) -> void:
+	sprite.texture = ImageTexture.create_from_image(sheet_image)
 
 func play_idle() -> void:
 	_state = "idle"

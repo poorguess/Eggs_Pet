@@ -118,38 +118,74 @@
   "hotPaths": [
     {
       "path": "scripts/face_api.gd",
-      "accessCount": 51,
-      "lastAccessed": 1789005977865,
+      "accessCount": 116,
+      "lastAccessed": 1789033471663,
       "type": "file"
     },
     {
       "path": "scripts/main_island.gd",
-      "accessCount": 28,
-      "lastAccessed": 1789005998831,
+      "accessCount": 47,
+      "lastAccessed": 1789022544761,
+      "type": "file"
+    },
+    {
+      "path": "tmp_probe_layout.gd",
+      "accessCount": 17,
+      "lastAccessed": 1789022635301,
       "type": "file"
     },
     {
       "path": "scripts/pet.gd",
-      "accessCount": 5,
-      "lastAccessed": 1788953517160,
+      "accessCount": 11,
+      "lastAccessed": 1789014547562,
       "type": "file"
     },
     {
       "path": "docs/face_swap_prompt.md",
-      "accessCount": 5,
-      "lastAccessed": 1788953793746,
+      "accessCount": 7,
+      "lastAccessed": 1789025002468,
       "type": "file"
     },
     {
       "path": "scripts/face_camera.gd",
-      "accessCount": 3,
-      "lastAccessed": 1788953148592,
+      "accessCount": 5,
+      "lastAccessed": 1789033471562,
       "type": "file"
     },
     {
       "path": "assets/pets/shell_pudding.png",
-      "accessCount": 1,
-      "lastAccessed": 1788951272705,
+      "accessCount": 4,
+      "lastAccessed": 1789033869794,
+      "type": "file"
+    },
+    {
+      "path": "tmp_stress_bake.gd",
+      "accessCount": 3,
+      "lastAccessed": 1789012670149,
+      "type": "file"
+    },
+    {
+      "path": "tmp_test_ingame.gd",
+      "accessCount": 3,
+      "lastAccessed": 1789013654496,
+      "type": "file"
+    },
+    {
+      "path": "tmp_ingame_shot.gd",
+      "accessCount": 3,
+      "lastAccessed": 1789023275352,
+      "type": "file"
+    },
+    {
+      "path": "scripts/save_service.gd",
+      "accessCount": 2,
+      "lastAccessed": 1789011738883,
+      "type": "file"
+    },
+    {
+      "path": "tmp_repro.gd",
+      "accessCount": 2,
+      "lastAccessed": 1789011968212,
       "type": "file"
     },
     {
@@ -159,9 +195,51 @@
       "type": "file"
     },
     {
-      "path": "scripts/save_service.gd",
+      "path": "assets/pets/character1.png",
       "accessCount": 1,
-      "lastAccessed": 1788953117848,
+      "lastAccessed": 1789009087843,
+      "type": "file"
+    },
+    {
+      "path": "tmp_probe_geometry.gd",
+      "accessCount": 1,
+      "lastAccessed": 1789009589918,
+      "type": "file"
+    },
+    {
+      "path": "tmp_test_bake.gd",
+      "accessCount": 1,
+      "lastAccessed": 1789010180851,
+      "type": "file"
+    },
+    {
+      "path": "scripts/parallax_background.gd",
+      "accessCount": 1,
+      "lastAccessed": 1789011738787,
+      "type": "file"
+    },
+    {
+      "path": "scripts/start_screen.gd",
+      "accessCount": 1,
+      "lastAccessed": 1789011738943,
+      "type": "file"
+    },
+    {
+      "path": "scripts/ui_theme.gd",
+      "accessCount": 1,
+      "lastAccessed": 1789011739093,
+      "type": "file"
+    },
+    {
+      "path": "tmp_probe_leaks.gd",
+      "accessCount": 1,
+      "lastAccessed": 1789011915069,
+      "type": "file"
+    },
+    {
+      "path": "Man.png",
+      "accessCount": 1,
+      "lastAccessed": 1789033869894,
       "type": "file"
     }
   ],

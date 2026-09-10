@@ -7,6 +7,7 @@ const EGG_IDLE_ROWS := 14
 const EGG_BROKEN_ROWS := 15
 const FACE_SAVE_PATH := "user://face.png"
 const PET_LOOK_SAVE_PATH := "user://pet_look.png"
+const PET_SHEET_SAVE_PATH := "user://pet_sheet.png"
 const CAMERA_ICON := "res://assets/ui/camera.png"
 const CHECK_ICON := "res://assets/ui/check.png"
 const FACE_TRACK := preload("res://assets/pets/face_tracks/character1_walk.tres")
@@ -34,7 +35,7 @@ var cross_icon: Texture2D
 var face_mode := ""
 var face_error := ""
 var face_texture: ImageTexture
-var pet_look_texture: ImageTexture
+var has_pet_look := false
 var pending_texture: ImageTexture
 var preview_texture: ImageTexture
 var face_camera: FaceCamera
@@ -77,6 +78,7 @@ func _ready() -> void:
 	_load_save()
 	_create_egg_sprite()
 	_ensure_pet()
+	_apply_saved_pet_look()
 	_load_features()
 	_sync_pet_visibility()
 	queue_redraw()
@@ -138,7 +140,7 @@ func _ensure_pet() -> void:
 
 func _sync_pet_visibility() -> void:
 	if pet:
-		pet.visible = stage == "pet" and pet_look_texture == null and face_mode == "" and not detail_open
+		pet.visible = stage == "pet" and face_mode == "" and not detail_open
 	_sync_face_overlay()
 
 # 降级模式（角色参考图缺失时）：把漫画头像叠到程序化宠物的头部，保证结果可见。
@@ -148,7 +150,7 @@ const FACE_OVERLAY_CANVAS_OFFSET := Vector2(0, -12.0)
 func _sync_face_overlay() -> void:
 	if pet == null:
 		return
-	var show := face_texture != null and pet_look_texture == null and stage == "pet"
+	var show := face_texture != null and not has_pet_look and stage == "pet"
 	if face_overlay == null:
 		if not show:
 			return
@@ -186,10 +188,16 @@ func _exit_tree() -> void:
 		_press_tween.kill()
 	if _dialog_tween:
 		_dialog_tween.kill()
+	# 退出时主动停相机、断在途请求，避免原生资源/连接悬挂到进程 teardown。
+	face_camera.stop()
+	face_api.cancel()
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_SIZE_CHANGED:
 		queue_redraw()
+	elif what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		# 移动端随时可能被划掉或切后台，立刻落盘让离线进度拿到最新的 last_saved。
+		_save()
 
 func _process(delta: float) -> void:
 	care.tick(delta, false)
@@ -496,16 +504,59 @@ func _cancel_face_flow() -> void:
 	pending_texture = null
 	_set_face_mode("")
 
-func _on_face_completed(image: Image, _full_character: bool) -> void:
-	var result := PetFaceImage.prepare(image)
-	if not String(result.error).is_empty():
-		_on_face_failed(result.error)
-		return
-	if customizer == null:
-		_open_customizer()
-	customizer.set_result(result.image)
+func _on_face_completed(image: Image, full_character: bool) -> void:
+	print("[FaceFlow] completed full_character=%s image=%dx%d" % [full_character, image.get_width(), image.get_height()])
+	if full_character:
+		var look := FaceApi.cutout_character(image)
+		if not _bake_and_apply(look):
+			# 留证：烘焙失败时保存原始 AI 结果，便于离线分析对齐问题。
+			look.save_png("user://pet_look_debug.png")
+			print("[FaceFlow] bake failed, raw look (%dx%d) saved to user://pet_look_debug.png" % [look.get_width(), look.get_height()])
+			_on_face_failed("没能把五官融合到角色脸上，换一张更清晰的正面照试试。")
+			return
+		# 原始 AI 结果留档：美术资产或校准常量变更后可重新烘焙，也兼容旧存档迁移。
+		look.save_png(PET_LOOK_SAVE_PATH)
+		has_pet_look = true
+		toast = "壳壳布丁换上了你的脸。"
+	else:
+		face_texture = ImageTexture.create_from_image(_circle_avatar(image))
+		image.save_png(FACE_SAVE_PATH)
+		_sync_face_overlay()
+		toast = "新脸已就位，壳壳布丁变样了。"
 	pending_texture = null
 	_set_face_mode("")
+	toast_time = 3.0
+	_save()
+	queue_redraw()
+
+# 把换脸结果烘焙进精灵表并应用到 pet；失败返回 false（pet 保持原样）。
+func _bake_and_apply(look: Image) -> bool:
+	if pet == null:
+		return false
+	var ref := FaceApi.load_image_resource(face_api.character_ref)
+	var sheet := Pet.SHEET.get_image()
+	if ref == null or sheet == null:
+		return false
+	var baked := FaceApi.bake_face_into_sheet(look, ref, sheet, Pet.HFRAMES, Pet.VFRAMES, Pet.FRAME_COUNT)
+	if baked.is_empty():
+		return false
+	pet.apply_look_sheet(baked)
+	baked.save_png(PET_SHEET_SAVE_PATH)
+	return true
+
+# 启动时恢复换脸外观：优先直接读烘焙好的精灵表；只有旧存档的 AI 原图时现场重烘焙迁移。
+func _apply_saved_pet_look() -> void:
+	if not has_pet_look or pet == null:
+		return
+	var sheet_image := Image.new()
+	if FileAccess.file_exists(PET_SHEET_SAVE_PATH) and sheet_image.load(PET_SHEET_SAVE_PATH) == OK:
+		pet.apply_look_sheet(sheet_image)
+		return
+	var look := Image.new()
+	if FileAccess.file_exists(PET_LOOK_SAVE_PATH) and look.load(PET_LOOK_SAVE_PATH) == OK and _bake_and_apply(look):
+		return
+	# 贴图文件丢失或重烘焙失败：外观回退默认，避免详情页虚报"已使用你的长相"。
+	has_pet_look = false
 
 func _on_face_failed(message: String) -> void:
 	print("[FaceFlow] failed: %s" % message)
@@ -592,15 +643,8 @@ func _draw_stat_rows(origin: Vector2, alpha: float = 1.0) -> void:
 func _draw_pet() -> void:
 	var p := _egg_animation_position() + Vector2(0.0, sin(pet_bounce * 2.0) * 4.0)
 	if hatch_flash > 0.0:
+		var p := Vector2(575, 292 + sin(pet_bounce * 2.0) * 4.0)
 		draw_circle(p, 106.0 * (1.2 - hatch_flash * 0.15), UiTheme.fade(UiTheme.LEMON, hatch_flash * 0.22))
-	if pet_look_texture:
-		var squish := 1.0 + sin(pet_bounce * 3.0) * 0.035
-		draw_set_transform(p, 0.0, Vector2(squish, 1.0 / squish))
-		var tex_size := pet_look_texture.get_size()
-		var fit := 260.0 / tex_size.y
-		var draw_size := tex_size * fit
-		draw_texture_rect(pet_look_texture, Rect2(Vector2(-draw_size.x * 0.5, -draw_size.y * 0.6), draw_size), false)
-		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func _draw_hatch_timer(viewport: Vector2, m: Vector4) -> void:
 	var panel := _hatch_panel_rect(viewport, m)
@@ -913,13 +957,10 @@ func _load_save() -> void:
 		var face_image := Image.new()
 		if face_image.load(FACE_SAVE_PATH) == OK:
 			face_texture = ImageTexture.create_from_image(_circle_avatar(face_image))
-	if bool(data.get("has_pet_look", false)) and FileAccess.file_exists(PET_LOOK_SAVE_PATH):
-		var look_image := Image.new()
-		if look_image.load(PET_LOOK_SAVE_PATH) == OK:
-			pet_look_texture = ImageTexture.create_from_image(look_image)
+	has_pet_look = bool(data.get("has_pet_look", false))
 
 func _save() -> void:
-	var data := {"stage": stage, "egg_type": "common_egg", "pet_species": "shell_pudding", "care": care.to_dict(), "has_face": face_texture != null, "has_pet_look": pet_look_texture != null, "created_at": created_at, "hatched_at": hatched_at}
+	var data := {"stage": stage, "egg_type": "common_egg", "pet_species": "shell_pudding", "care": care.to_dict(), "has_face": face_texture != null, "has_pet_look": has_pet_look, "created_at": created_at, "hatched_at": hatched_at}
 	data.merge(growth.to_dict())
 	SaveService.save_data(data)
 
