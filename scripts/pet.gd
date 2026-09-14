@@ -66,6 +66,10 @@ func _ellipse_distance(p: Vector2) -> float:
 func apply_look_sheet(sheet_image: Image) -> void:
 	sprite.texture = ImageTexture.create_from_image(sheet_image)
 
+# 五官贴层取代烘焙外观时，恢复默认精灵表纹理。
+func reset_look() -> void:
+	sprite.texture = SHEET
+
 func play_idle() -> void:
 	_state = "idle"
 	_fps = idle_fps

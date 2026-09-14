@@ -8,6 +8,7 @@ const CONFIG_PATH_USER := "user://face_api.cfg"
 const CONFIG_PATH_RES := "res://face_api.cfg"
 # 保持在原链路已验证的输入像素限制内；只上传自拍。
 const PHOTO_SIZE := 400
+const BOUNDARY := "GodotFaceApiBoundary7MA4YWxkTrZu0gW"
 const FeaturePrompt = preload("res://scripts/face/face_prompt.gd")
 const DEFAULT_PROMPT := FeaturePrompt.TEXT
 
@@ -19,6 +20,9 @@ var prompt := DEFAULT_PROMPT
 var image_size := ""
 var quality := ""
 var config_error := ""
+
+# 角色参考立绘（旧存档迁移时的重烘焙用）：与精灵表单帧同为 320x395 且摆位一致。
+var character_ref := "res://assets/pets/shell_pudding.png"
 
 # 网关上游不稳定（同一请求随机返回 400 "Upstream request failed"），自动重试几次再报错。
 const MAX_ATTEMPTS := 5
@@ -89,20 +93,6 @@ static func crop_square(photo: Image) -> Image:
 	var region := Rect2i((image.get_width() - side) / 2, (image.get_height() - side) / 2, side, side)
 	return image.get_region(region)
 
-
-func _load_character_ref() -> Image:
-	if character_ref.is_empty():
-		return null
-	var image := load_image_resource(character_ref)
-	if image == null or image.is_empty():
-		push_warning("FaceApi: 角色参考图加载失败（%s），退回单图漫画头像模式。" % character_ref)
-		return null
-	var longest := maxi(image.get_width(), image.get_height())
-	if longest > 1024:
-		var ratio := 1024.0 / longest
-		image.resize(maxi(1, int(image.get_width() * ratio)), maxi(1, int(image.get_height() * ratio)), Image.INTERPOLATE_LANCZOS)
-	return image
-
 static func _text_part(boundary: String, field: String, value: String) -> PackedByteArray:
 	return ("--" + boundary + "\r\nContent-Disposition: form-data; name=\"" + field + "\"\r\n\r\n" + value + "\r\n").to_utf8_buffer()
 
@@ -118,12 +108,11 @@ func _send(parts: Array[PackedByteArray]) -> void:
 	_send_now()
 
 func _send_now() -> void:
-	var boundary := "GodotFaceApiBoundary7MA4YWxkTrZu0gW"
 	var body := PackedByteArray()
 	for part in _retry_parts:
 		body.append_array(part)
-	body.append_array(("--" + boundary + "--\r\n").to_utf8_buffer())
-	var headers := PackedStringArray(["Content-Type: multipart/form-data; boundary=" + boundary])
+	body.append_array(("--" + BOUNDARY + "--\r\n").to_utf8_buffer())
+	var headers := PackedStringArray(["Content-Type: multipart/form-data; boundary=" + BOUNDARY])
 	if not api_key.is_empty():
 		headers.append("Authorization: Bearer " + api_key)
 	print("[FaceApi] POST %s bytes=%d attempt=%d" % [endpoint, body.size(), _attempt + 1])
@@ -175,36 +164,18 @@ func _request_cloud(photo: Image) -> void:
 	_last_full_character = false
 	var image := crop_square(photo)
 	image.resize(PHOTO_SIZE, PHOTO_SIZE, Image.INTERPOLATE_LANCZOS)
-	var boundary := "GodotFaceApiBoundary7MA4YWxkTrZu0gW"
-	image.resize(FALLBACK_AVATAR_SIZE, FALLBACK_AVATAR_SIZE, Image.INTERPOLATE_LANCZOS)
-	_send([
-		_text_part("GodotFaceApiBoundary7MA4YWxkTrZu0gW", "model", model),
-		_text_part("GodotFaceApiBoundary7MA4YWxkTrZu0gW", "prompt", LEGACY_PROMPT),
-		_image_part("GodotFaceApiBoundary7MA4YWxkTrZu0gW", "image", "photo.png", image.save_png_to_buffer()),
-		_text_part("GodotFaceApiBoundary7MA4YWxkTrZu0gW", "background", "transparent"),
-		_text_part("GodotFaceApiBoundary7MA4YWxkTrZu0gW", "output_format", "png"),
-	])
-
-static func _fit_into(image: Image, box: Vector2i) -> Image:
-	var scale := minf(float(box.x) / image.get_width(), float(box.y) / image.get_height())
-	var w := maxi(1, int(image.get_width() * scale))
-	var h := maxi(1, int(image.get_height() * scale))
-	image.resize(w, h, Image.INTERPOLATE_LANCZOS)
-	# blit_rect 要求与目标图格式一致；JPEG/相机帧是 RGB8，须统一转成合成图的 RGBA8。
-	if image.get_format() != Image.FORMAT_RGBA8:
-		image.convert(Image.FORMAT_RGBA8)
-	return image
-
-func _build_composite(ref: Image, photo: Image) -> Image:
-	var half := Vector2i(COMPOSITE_SIZE.x / 2, COMPOSITE_SIZE.y)
-	var left := _fit_into(ref.duplicate(), half)
-	var right := _fit_into(crop_square(photo), half)
-	var composite := Image.create(COMPOSITE_SIZE.x, COMPOSITE_SIZE.y, false, Image.FORMAT_RGBA8)
-	# 透明底输入会被上游 400 拒绝；白底已验证可用。blend_rect 按 alpha 混合，角色立绘的透明区不会击穿白底。
-	composite.fill(Color.WHITE)
-	composite.blend_rect(left, Rect2i(Vector2i.ZERO, left.get_size()), Vector2i((half.x - left.get_width()) / 2, (half.y - left.get_height()) / 2))
-	composite.blend_rect(right, Rect2i(Vector2i.ZERO, right.get_size()), Vector2i(half.x + (half.x - right.get_width()) / 2, (half.y - right.get_height()) / 2))
-	return composite
+	var parts: Array[PackedByteArray] = [
+		_text_part(BOUNDARY, "model", model),
+		_text_part(BOUNDARY, "prompt", DEFAULT_PROMPT),
+		_image_part(BOUNDARY, "image", "photo.png", image.save_png_to_buffer()),
+		_text_part(BOUNDARY, "background", "transparent"),
+		_text_part(BOUNDARY, "output_format", "png"),
+	]
+	if not image_size.is_empty():
+		parts.append(_text_part(BOUNDARY, "size", image_size))
+	if not quality.is_empty():
+		parts.append(_text_part(BOUNDARY, "quality", quality))
+	_send(parts)
 
 # 当前网关总是返回不透明纯色底（实测为黑），且忽略 background=transparent：
 # 缩到显示分辨率后从边缘洪泛抠掉四角取样的底色。四角颜色不一致（模型画了场景）时原样返回，不误伤。
@@ -1165,21 +1136,6 @@ static func load_image_resource(path: String) -> Image:
 	if image.load(path) == OK:
 		return image
 	return null
-
-func _request_cloud_swap(photo: Image, ref: Image) -> void:
-	_last_full_character = true
-	var composite := _build_composite(ref, photo)
-	var parts: Array[PackedByteArray] = [
-		_text_part(boundary, "model", model),
-		_text_part(boundary, "prompt", FeaturePrompt.TEXT),
-		_image_part(boundary, "image", "photo.png", image.save_png_to_buffer()),
-		_text_part(boundary, "output_format", "png"),
-	]
-	if not image_size.is_empty():
-		parts.append(_text_part(boundary, "size", image_size))
-	if not quality.is_empty():
-		parts.append(_text_part(boundary, "quality", quality))
-	_send(parts)
 
 func _result_text(result: int) -> String:
 	match result:

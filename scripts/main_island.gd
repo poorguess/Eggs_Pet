@@ -504,30 +504,17 @@ func _cancel_face_flow() -> void:
 	pending_texture = null
 	_set_face_mode("")
 
-func _on_face_completed(image: Image, full_character: bool) -> void:
-	print("[FaceFlow] completed full_character=%s image=%dx%d" % [full_character, image.get_width(), image.get_height()])
-	if full_character:
-		var look := FaceApi.cutout_character(image)
-		if not _bake_and_apply(look):
-			# 留证：烘焙失败时保存原始 AI 结果，便于离线分析对齐问题。
-			look.save_png("user://pet_look_debug.png")
-			print("[FaceFlow] bake failed, raw look (%dx%d) saved to user://pet_look_debug.png" % [look.get_width(), look.get_height()])
-			_on_face_failed("没能把五官融合到角色脸上，换一张更清晰的正面照试试。")
-			return
-		# 原始 AI 结果留档：美术资产或校准常量变更后可重新烘焙，也兼容旧存档迁移。
-		look.save_png(PET_LOOK_SAVE_PATH)
-		has_pet_look = true
-		toast = "壳壳布丁换上了你的脸。"
-	else:
-		face_texture = ImageTexture.create_from_image(_circle_avatar(image))
-		image.save_png(FACE_SAVE_PATH)
-		_sync_face_overlay()
-		toast = "新脸已就位，壳壳布丁变样了。"
+func _on_face_completed(image: Image, _full_character: bool) -> void:
+	print("[FaceFlow] completed image=%dx%d" % [image.get_width(), image.get_height()])
+	var result := PetFaceImage.prepare(image)
+	if not String(result.error).is_empty():
+		_on_face_failed(String(result.error))
+		return
+	if customizer == null:
+		_open_customizer()
+	customizer.set_result(result.image)
 	pending_texture = null
 	_set_face_mode("")
-	toast_time = 3.0
-	_save()
-	queue_redraw()
 
 # 把换脸结果烘焙进精灵表并应用到 pet；失败返回 false（pet 保持原样）。
 func _bake_and_apply(look: Image) -> bool:
@@ -643,7 +630,6 @@ func _draw_stat_rows(origin: Vector2, alpha: float = 1.0) -> void:
 func _draw_pet() -> void:
 	var p := _egg_animation_position() + Vector2(0.0, sin(pet_bounce * 2.0) * 4.0)
 	if hatch_flash > 0.0:
-		var p := Vector2(575, 292 + sin(pet_bounce * 2.0) * 4.0)
 		draw_circle(p, 106.0 * (1.2 - hatch_flash * 0.15), UiTheme.fade(UiTheme.LEMON, hatch_flash * 0.22))
 
 func _draw_hatch_timer(viewport: Vector2, m: Vector4) -> void:
@@ -839,7 +825,7 @@ func _draw_detail_pet(panel: Rect2, a: float) -> void:
 	var look := "默认样貌"
 	if feature_image != null:
 		look = "已对齐你的五官（动画）"
-	elif pet_look_texture:
+	elif has_pet_look:
 		look = "已使用你的长相"
 	elif face_texture:
 		look = "漫画头像（简易模式）"
@@ -936,8 +922,6 @@ func _detail_close_rect() -> Rect2:
 func _creature_hit_rect() -> Rect2:
 	if stage == "egg" and egg_sprite:
 		return Rect2(egg_sprite.position - Vector2(160, 100), Vector2(320, 200))
-	if pet_look_texture:
-		return Rect2(445.0, 120.0, 280.0, 320.0)
 	if pet and pet.visible:
 		return Rect2(pet.position - Vector2(90, 110), Vector2(180, 220))
 	return Rect2(445.0, 120.0, 280.0, 320.0)
@@ -1003,7 +987,9 @@ func _apply_features(image: Image, profile: PetFaceProfile) -> void:
 	feature_profile = profile
 	feature_image = image
 	pet.apply_features(ImageTexture.create_from_image(image), profile, FACE_TRACK)
-	pet_look_texture = null
+	# 新五官贴层取代烘焙外观，恢复默认序列帧显示。
+	pet.reset_look()
+	has_pet_look = false
 	face_texture = null
 	_close_customizer()
 	_save()
@@ -1027,5 +1013,6 @@ func _load_features() -> void:
 		push_warning("换脸模块：" + error)
 		return
 	feature_image = image
-	pet_look_texture = null
+	pet.reset_look()
+	has_pet_look = false
 	face_texture = null
