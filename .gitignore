@@ -4,4 +4,7 @@
 face_api.cfg
 /build/face_*
 /build/pet_features_*
+/build/*.apk
 .omc/
+.claude/
+.DS_Store
