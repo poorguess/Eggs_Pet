@@ -16,6 +16,15 @@
 
 PNG 与调节参数分别存入 `user://pet_features_<编号>.png` 和 `user://pet_face_profile.json`。JSON 最后替换，避免失败时覆盖旧图。自拍沿用原流程暂存内存，不新增照片存盘逻辑。
 
+## 本机合成模式（离线，2026-09-14 起）
+
+换脸界面"生成方式"切到"本机合成（离线）"后，流程不请求网络：自拍 → MediaPipe 478 关键点（GDMP，端侧）→ 按模板三角 warp → 肤色增益 + 凸包羽化混合成整帧 → 预览确认 → 应用时把五官层逐帧烘焙进精灵表，33 帧动画与漫游不变。
+
+- 平台：GDMP 仅含 macOS arm64 / Android arm64 / iOS 原生库。Windows 编辑器中"本机合成"选项禁用（`FaceAnalyzer.is_available()` 为 false）；未配置生图服务时默认选中本机模式。
+- 与 AI 五官贴层互斥：应用合成会清除已保存的五官外貌（`pet_face_profile.json` 与 `pet_features_*.png`）；外观由 `user://pet_sheet.png` + 主存档 `has_pet_look` 承载，重启自动恢复。
+- 模板：`assets/face_templates/shell_pudding.json`（21 锚点首版手工标注，待美术在编辑器中精修）。
+- 取消、检测失败、烘焙失败均保留原外貌；关键点检测约 88ms（CPU delegate），一次合成整体为亚秒级。
+
 ## 游戏内服务配置
 
 换脸界面点击“配置生图服务 / API Key”。默认地址为 `https://huniuai.token6688.com/v1`。填写 Key 后，可点击“测试连接 / 获取模型列表”；此操作仅 GET `/models`，不生成图片。选择服务商支持图片编辑的模型，或手动输入模型名，再点“保存并使用”。
@@ -65,6 +74,8 @@ Android 预设显式排除 `addons/face_track_editor/*`、测试、文档和构�
 
 ```powershell
 & 'D:/Godot/Godot_v4.7.2-stable_win64_console.exe' --headless --path . --script scripts/tests/run_face_tests.gd
+# 端侧管线（模板/warp/遮罩/增益/逐帧烘焙/降级/定制器本机模式，不依赖 GDMP）：
+& 'D:/Godot/Godot_v4.7.2-stable_win64_console.exe' --headless --path . --script scripts/tests/run_face_pipeline_tests.gd
 ```
 
 已通过：24 项几何、默认轨迹、透明图、UI 草稿、存档替换、镜像/帧同步及插件构建检查。默认等比映射的回归检查先失败、修复后通过。主岛 headless 运行没有新增脚本错误。隐藏窗口实际渲染检查了左右布局和标注工作台；预览使用人工测试五官。

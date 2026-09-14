@@ -14,7 +14,7 @@
 - **引擎**：Godot 4.7，Mobile 渲染管线（`rendering_method="mobile"`），2D 项目。
 - **语言**：GDScript（不使用 C#）。
 - **目标平台**：移动端横屏。PC 仅用于开发调试，鼠标/键盘是触摸的临时替代输入，实现交互时必须同时考虑触摸路径。
-- **主场景**：`scenes/main_island.tscn`（已设为 main scene）。
+- **主场景**：`scenes/start_screen.tscn`（启动页，已设为 main scene）；游戏主场景为 `scenes/main_island.tscn`。
 
 ## 目录结构约定
 
@@ -77,7 +77,7 @@ addons/          # 第三方插件（见"插件使用约定"）
 
 ## 插件使用约定
 
-项目已启用 13 个插件。使用时**优先调用插件能力，不要重复造轮子**：
+项目已启用 16 个插件。使用时**优先调用插件能力，不要重复造轮子**：
 
 | 插件 | 用途定位 |
 |---|---|
@@ -87,6 +87,9 @@ addons/          # 第三方插件（见"插件使用约定"）
 | godot_state_charts | 状态机（照护状态、宠物行为状态等需要状态机时使用） |
 | phantom_camera（`PhantomCameraManager` autoload） | 相机控制与镜头切换 |
 | dialogue_manager（`DialogueManager` autoload） | 对话 / 文本呈现 |
+| GDMP（`MediaPipeExternalFiles` / `GDMPAndroid` autoload） | 端侧 MediaPipe 人脸关键点，换脸"本机合成"模式用；仅 macOS arm64 / Android arm64 / iOS 原生库，Windows 编辑器中 `FaceAnalyzer.is_available()` 为 false |
+| NativeCameraPlugin | 原生相机采集（自拍流程） |
+| face_track_editor | 脸部轮廓逐帧标注（编辑器工具，导出排除） |
 | nklbdev.importality、AS2P | Aseprite / 精灵表动画导入 |
 | gdfxr | 程序化音效生成（sfxr 风格） |
 | csv-data-importer | CSV 数据表导入（如多蛋种/多物种数据准备） |
