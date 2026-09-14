@@ -10,9 +10,10 @@
 #
 # 一次性环境准备（脚本会逐项预检并给出提示）：
 #   1. Android SDK：安装 Android Studio 或 cmdline-tools，需含 platform-tools / build-tools / platforms;android-35
-#   2. JDK 17：Godot 4.7 Gradle 构建要求；脚本按 JAVA_HOME -> 常见安装目录 顺序探测
-#   3. Godot 导出模板：编辑器内"项目 -> 安装 Android 导出模板"（对应 4.7.stable）
+#   2. JDK 17：Godot 4.7 Gradle 构建要求；脚本按 JAVA_HOME -> 用户注册表 -> Scoop -> 常见安装目录 顺序探测
+#   3. Godot 导出模板：编辑器内"项目 -> 安装 Android 导出模板"（对应 4.7.2.stable）
 #   4. Godot 编辑器设置中 export/android/android_sdk_path 指向 SDK 根目录
+# 项目内 android\build 构建模板缺失时脚本自动从导出模板解压安装（等价于"安装 Android 构建模板"菜单）。
 
 param(
     [string]$GodotBin = "",
@@ -20,7 +21,9 @@ param(
     [switch]$Launch
 )
 
-$ErrorActionPreference = "Stop"
+# 不用 Stop：PS 5.1 会把原生命令的 stderr（如 adb 守护进程启动提示）当致命错误，
+# 脚本对每条原生命令显式检查 $LASTEXITCODE，足以兜底。
+$ErrorActionPreference = "Continue"
 Set-Location $PSScriptRoot
 
 $PresetName = "Android"
@@ -66,12 +69,19 @@ if (-not $Adb) {
 
 # --- JDK 17（Gradle 构建需要；仅对脚本进程注入，不改系统环境） ---
 if (-not $env:JAVA_HOME -or -not (Test-Path (Join-Path $env:JAVA_HOME "bin\java.exe"))) {
-    $jdk = Get-ChildItem "C:\Program Files\Java", "C:\Program Files\Eclipse Adoptium" -Directory -ErrorAction SilentlyContinue |
-        Where-Object { Test-Path (Join-Path $_.FullName "bin\java.exe") } | Select-Object -First 1
+    $jdkDirs = @([Environment]::GetEnvironmentVariable("JAVA_HOME", "User"))
+    if ($env:SCOOP) { $jdkDirs += Join-Path $env:SCOOP "apps\temurin17-jdk\current" }
+    $jdkDirs += "D:\Scoop\apps\temurin17-jdk\current"
+    $jdk = $jdkDirs | Where-Object { $_ -and (Test-Path (Join-Path $_ "bin\java.exe")) } | Select-Object -First 1
+    if (-not $jdk) {
+        $jdk = Get-ChildItem "C:\Program Files\Java", "C:\Program Files\Eclipse Adoptium" -Directory -ErrorAction SilentlyContinue |
+            Where-Object { Test-Path (Join-Path $_.FullName "bin\java.exe") } | Select-Object -First 1
+        if ($jdk) { $jdk = $jdk.FullName }
+    }
     if ($jdk) {
-        $env:JAVA_HOME = $jdk.FullName
-        $env:Path = (Join-Path $jdk.FullName "bin") + ";" + $env:Path
-        Write-Host "JAVA_HOME (进程内): $($jdk.FullName)"
+        $env:JAVA_HOME = $jdk
+        $env:Path = (Join-Path $jdk "bin") + ";" + $env:Path
+        Write-Host "JAVA_HOME (进程内): $jdk"
     } else {
         Fail "未找到 JDK。" "Gradle 构建需要 JDK 17：安装 Eclipse Temurin 17 或设置 JAVA_HOME 后重试。"
     }
@@ -85,10 +95,30 @@ if (-not (Test-Path (Join-Path $sdkRoot "build-tools"))) {
     Fail "Android SDK 不完整：$sdkRoot 下缺少 build-tools。" "用 Android Studio SDK Manager 安装 platform-tools / build-tools / platforms;android-35。"
 }
 
-# --- 导出模板预检 ---
-$templates = "$env:APPDATA\Godot\export_templates\4.7.stable"
-if (-not (Test-Path (Join-Path $templates "android_source.zip"))) {
-    Fail "Godot 4.7 Android 导出模板未安装。" "编辑器内：项目 -> 安装 Android 导出模板，版本需与 Godot 完全一致（4.7.stable）。"
+# --- 导出模板预检（Godot 4.5+ 用完整版本号目录，如 4.7.2.stable） ---
+$templatesRoot = "$env:APPDATA\Godot\export_templates"
+$templates = Get-ChildItem $templatesRoot -Directory -ErrorAction SilentlyContinue |
+    Where-Object { Test-Path (Join-Path $_.FullName "android_source.zip") } | Select-Object -First 1
+if (-not $templates) {
+    Fail "Godot Android 导出模板未安装。" "编辑器内：项目 -> 安装 Android 导出模板，版本需与 Godot 完全一致（当前 4.7.2.stable）。"
+}
+
+# --- 项目内 Android 构建模板（Gradle 构建必需；缺失时自动从导出模板安装，等价于编辑器"安装 Android 构建模板"） ---
+if (-not (Test-Path "android\build\build.gradle")) {
+    Write-Host "安装 Android 构建模板到 android\build ..."
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    if (Test-Path "android\build") { Remove-Item -Recurse -Force "android\build" }
+    [System.IO.Compression.ZipFile]::ExtractToDirectory((Join-Path $templates.FullName "android_source.zip"), (Join-Path (Get-Location) "android\build"))
+    New-Item -ItemType File -Force -Path "android\build\.gdignore" | Out-Null
+}
+$tplVersion = Get-Content (Join-Path $templates.FullName "version.txt") -ErrorAction SilentlyContinue | Select-Object -First 1
+if ($tplVersion) {
+    $marker = "android\.build_version"
+    $markerValue = Get-Content $marker -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($markerValue -ne $tplVersion) {
+        Set-Content -Path $marker -Value $tplVersion -Encoding ASCII
+        Write-Host "android\.build_version -> $tplVersion"
+    }
 }
 
 # --- 设备检查 ---
