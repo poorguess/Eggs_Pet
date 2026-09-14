@@ -28,6 +28,8 @@ SoundManager="*uid://6q1wagejt60k"
 SceneManager="*uid://2iy8wfgenjka"
 Scenes="*uid://bhpqiqnk2f3o"
 _mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
+MediaPipeExternalFiles="*uid://ce3bedr10o6h"
+GDMPAndroid="*uid://dblbf12yp75kb"
 
 [display]
 
@@ -38,7 +40,7 @@ window/stretch/aspect="expand"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/AS2P/plugin.cfg", "res://addons/NativeCameraPlugin/plugin.cfg", "res://addons/Todo_Manager/plugin.cfg", "res://addons/csv-data-importer/plugin.cfg", "res://addons/dialogue_manager/plugin.cfg", "res://addons/face_track_editor/plugin.cfg", "res://addons/gdfxr/plugin.cfg", "res://addons/godot_state_charts/plugin.cfg", "res://addons/input_helper/plugin.cfg", "res://addons/nklbdev.importality/plugin.cfg", "res://addons/phantom_camera/plugin.cfg", "res://addons/scene_manager/plugin.cfg", "res://addons/script-ide/plugin.cfg", "res://addons/sound_manager/plugin.cfg")
+enabled=PackedStringArray("res://addons/AS2P/plugin.cfg", "res://addons/GDMP/plugin.cfg", "res://addons/NativeCameraPlugin/plugin.cfg", "res://addons/Todo_Manager/plugin.cfg", "res://addons/csv-data-importer/plugin.cfg", "res://addons/dialogue_manager/plugin.cfg", "res://addons/face_track_editor/plugin.cfg", "res://addons/gdfxr/plugin.cfg", "res://addons/godot_ai/plugin.cfg", "res://addons/godot_state_charts/plugin.cfg", "res://addons/input_helper/plugin.cfg", "res://addons/nklbdev.importality/plugin.cfg", "res://addons/phantom_camera/plugin.cfg", "res://addons/scene_manager/plugin.cfg", "res://addons/script-ide/plugin.cfg", "res://addons/sound_manager/plugin.cfg")
 
 [physics]
 

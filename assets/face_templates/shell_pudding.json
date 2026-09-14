@@ -1,0 +1,28 @@
+{
+	"name": "shell_pudding",
+	"canvas": [320, 395],
+	"comment": "锚点：MediaPipe 468 关键点索引 -> shell_pudding.png 像素坐标。首版手工标注，供美术在编辑器中精修。",
+	"anchors": [
+		{"index": 10,  "point": [160, 118]},
+		{"index": 234, "point": [78, 190]},
+		{"index": 454, "point": [242, 190]},
+		{"index": 152, "point": [160, 262]},
+		{"index": 105, "point": [114, 152]},
+		{"index": 334, "point": [206, 152]},
+		{"index": 33,  "point": [98, 180]},
+		{"index": 133, "point": [140, 180]},
+		{"index": 468, "point": [119, 182]},
+		{"index": 362, "point": [180, 180]},
+		{"index": 263, "point": [222, 180]},
+		{"index": 473, "point": [201, 182]},
+		{"index": 159, "point": [119, 172]},
+		{"index": 145, "point": [119, 192]},
+		{"index": 386, "point": [201, 172]},
+		{"index": 374, "point": [201, 192]},
+		{"index": 1,   "point": [160, 206]},
+		{"index": 61,  "point": [126, 234]},
+		{"index": 291, "point": [194, 234]},
+		{"index": 0,   "point": [160, 224]},
+		{"index": 17,  "point": [160, 248]}
+	]
+}

@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://gbbtkphh42e"]
+
+[ext_resource type="Script" path="res://scripts/face_lab.gd" id="1_lab"]
+
+[node name="FaceLab" type="Node"]
+script = ExtResource("1_lab")

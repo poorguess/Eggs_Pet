@@ -1,0 +1,10 @@
+[configuration]
+
+entry_symbol = "mediapipe_library_init"
+compatibility_minimum = 4.4
+
+[libraries]
+
+macos.arm64 = "res://addons/GDMP/libs/arm64/libGDMP.macos.dylib"
+android.arm64 = "res://addons/GDMP/libs/arm64/libGDMP.android.so"
+ios = "res://addons/GDMP/libs/GDMP.ios.xcframework"
