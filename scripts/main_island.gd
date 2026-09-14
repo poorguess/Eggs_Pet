@@ -13,6 +13,9 @@ const CHECK_ICON := "res://assets/ui/check.png"
 const FACE_TRACK := preload("res://assets/pets/face_tracks/character1_walk.tres")
 const FACE_CUSTOMIZER := preload("res://scenes/face_customizer.tscn")
 const CROSS_ICON := "res://assets/ui/cross.png"
+# 本机合成的底图与模板：与精灵表单帧同为 320x395，锚点对应 MediaPipe 关键点。
+const FACE_BASE := "res://assets/pets/shell_pudding.png"
+const FACE_TEMPLATE := "res://assets/face_templates/shell_pudding.json"
 
 var feature_profile := PetFaceProfile.new()
 var feature_image: Image
@@ -40,11 +43,14 @@ var pending_texture: ImageTexture
 var preview_texture: ImageTexture
 var face_camera: FaceCamera
 var face_api: FaceApi
+var compositor: FaceCompositor
 var pet: Pet
 var face_overlay: Sprite2D
 var detail_open := false
 var created_at := 0.0
 var hatched_at := 0.0
+var _face_base: Image
+var _face_template: FaceTemplate
 var _press_target := ""
 var _press_amount := 0.0
 var _round_scale := 1.0
@@ -64,6 +70,10 @@ func _ready() -> void:
 	add_child(face_api)
 	face_api.completed.connect(_on_face_completed)
 	face_api.failed.connect(_on_face_failed)
+	compositor = FaceCompositor.new()
+	add_child(compositor)
+	compositor.completed.connect(_on_composite_completed)
+	compositor.failed.connect(_on_face_failed)
 	face_camera = FaceCamera.new()
 	add_child(face_camera)
 	face_camera.preview_frame.connect(_on_face_preview_frame)
@@ -470,11 +480,7 @@ func _on_photo_ready(photo: Image) -> void:
 	_set_face_mode("confirm")
 
 func _apply_face_photo() -> void:
-	if pending_texture == null:
-		_set_face_mode("")
-		return
-	_set_face_mode("processing")
-	face_api.process_photo(pending_texture.get_image())
+	_process_pending_photo()
 
 func _retake_face_photo() -> void:
 	pending_texture = null
@@ -486,11 +492,37 @@ func _retake_face_photo() -> void:
 		_open_face_file_dialog()
 
 func _retry_face_photo() -> void:
+	_process_pending_photo()
+
+## 确认照片后的处理入口：按定制器当前选择的生成方式分流。
+## 本机合成走 FaceCompositor（离线），AI 模式走 FaceApi（联网生图服务）。
+func _process_pending_photo() -> void:
 	if pending_texture == null:
 		_set_face_mode("")
 		return
 	_set_face_mode("processing")
-	face_api.process_photo(pending_texture.get_image())
+	if customizer != null and customizer.local_mode:
+		_run_local_composite(pending_texture.get_image())
+	else:
+		face_api.process_photo(pending_texture.get_image())
+
+func _run_local_composite(photo: Image) -> void:
+	if _face_base == null:
+		_face_base = FaceApi.load_image_resource(FACE_BASE)
+	if _face_template == null:
+		_face_template = FaceTemplate.load_from_json(FACE_TEMPLATE)
+	if _face_base == null or not _face_template.is_valid():
+		_on_face_failed("本机合成缺少角色立绘或模板文件。")
+		return
+	compositor.process_photo(photo, _face_base, _face_template)
+
+func _on_composite_completed(image: Image) -> void:
+	print("[FaceFlow] local composite %dx%d" % [image.get_width(), image.get_height()])
+	pending_texture = null
+	if customizer == null:
+		_open_customizer()
+	customizer.set_composite_result(image)
+	_set_face_mode("")
 
 func _close_face_error() -> void:
 	if pending_texture:
@@ -956,11 +988,14 @@ func _open_customizer() -> void:
 	add_child(customizer_layer)
 	customizer = FACE_CUSTOMIZER.instantiate()
 	customizer_layer.add_child(customizer)
+	# 未配置生图服务时默认本机合成（离线可用）；GDMP 不可用的平台由定制器禁用该选项。
+	customizer.default_local = not face_api.config_error.is_empty()
 	customizer.open(FACE_TRACK, feature_profile, feature_image)
 	customizer.photo_requested.connect(func() -> void: _set_face_mode("consent"))
 	customizer.service_configuration_saved.connect(face_api.reload_config)
 	customizer.cancelled.connect(_close_customizer)
 	customizer.applied.connect(_apply_features)
+	customizer.composite_applied.connect(_apply_composite_look)
 	_set_face_mode("customize")
 
 func _close_customizer() -> void:
@@ -995,6 +1030,29 @@ func _apply_features(image: Image, profile: PetFaceProfile) -> void:
 	_save()
 	toast = "五官已对齐，继续跟随角色运动。"
 	toast_time = 3
+
+## 本机合成应用：整帧成品逐帧烘焙进精灵表，33 帧动画与漫游逻辑不变。
+## 与 AI 贴层互斥：清除已保存的五官外貌，外观改由烘焙表承载并随存档恢复。
+func _apply_composite_look(image: Image) -> void:
+	if image == null or pet == null or _face_base == null:
+		return
+	var baked := compositor.bake_into_sheet(_face_base, Pet.SHEET.get_image(), Pet.HFRAMES, Pet.VFRAMES, Pet.FRAME_COUNT)
+	if baked.is_empty():
+		customizer.set_error("合成结果烘焙失败，原外貌未更改。")
+		return
+	image.save_png(PET_LOOK_SAVE_PATH)
+	baked.save_png(PET_SHEET_SAVE_PATH)
+	pet.apply_look_sheet(baked)
+	pet.clear_features()
+	PetFaceProfile.reset_saved()
+	feature_profile = PetFaceProfile.new()
+	feature_image = null
+	face_texture = null
+	has_pet_look = true
+	_close_customizer()
+	_save()
+	toast = "壳壳布丁换上了你的脸。"
+	toast_time = 3.0
 
 func _load_features() -> void:
 	feature_profile = PetFaceProfile.load_saved()

@@ -1102,6 +1102,16 @@ static func bake_face_into_sheet(look: Image, ref: Image, sheet: Image, hframes:
 					a = 0.0
 				patch.set_pixel(x, y, Color(lp.r, lp.g, lp.b, a))
 	# 脸部相对头部亮区的归一化位置，逐帧按该帧头部亮区还原（跟随帧间挤压/晃动）。
+	return bake_patch_into_sheet(patch, face, head, sheet_img, hframes, vframes, frame_count)
+
+# 通用逐帧烘焙：patch 为 ref 坐标系 face 矩形内的透明五官贴片，按每帧头部亮区 bbox
+# 的相对位置缩放铺进精灵表。AI 整脸烘焙与端侧合成管线共用此铺设逻辑。
+static func bake_patch_into_sheet(patch: Image, face: Rect2i, head: Rect2i, sheet: Image, hframes: int, vframes: int, frame_count: int) -> Image:
+	if patch == null or patch.is_empty() or sheet == null or face.size.x <= 0 or face.size.y <= 0 or head.size.x <= 0 or head.size.y <= 0:
+		return Image.new()
+	var sheet_img: Image = sheet.duplicate()
+	if sheet_img.get_format() != Image.FORMAT_RGBA8:
+		sheet_img.convert(Image.FORMAT_RGBA8)
 	var face_rel := Rect2(
 		float(face.position.x - head.position.x) / head.size.x,
 		float(face.position.y - head.position.y) / head.size.y,

@@ -70,6 +70,12 @@ func apply_look_sheet(sheet_image: Image) -> void:
 func reset_look() -> void:
 	sprite.texture = SHEET
 
+# 烘焙整脸外观取代五官贴层时，移除贴层节点。
+func clear_features() -> void:
+	if features:
+		features.queue_free()
+		features = null
+
 func play_idle() -> void:
 	_state = "idle"
 	_fps = idle_fps

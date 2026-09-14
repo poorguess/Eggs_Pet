@@ -68,6 +68,43 @@ func process_photo(photo: Image, base: Image, template: FaceTemplate) -> void:
 		result = _blend_cpu(base, warped, hull, gain)
 	completed.emit(result)
 
+## 把最近一次合成的五官层逐帧烘焙进精灵表（33 帧动画保留，纹理像素替换）。
+## 贴片颜色取 warp 层 × 肤色增益、alpha 取凸包羽化系数——与单帧混合完全同式，
+## 铺到任何一帧都等价于对该帧现场混合。须在读档立绘 base 与最近一次
+## process_photo 的中间产物基础上调用；失败返回空 Image，调用方保持原外貌。
+func bake_into_sheet(base: Image, sheet: Image, hframes: int, vframes: int, frame_count: int) -> Image:
+	var warped: Image = last_intermediates.get("warped")
+	var gain: Vector3 = last_intermediates.get("gain", Vector3.ONE)
+	var hull: PackedVector2Array = last_intermediates.get("hull", PackedVector2Array())
+	if warped == null or hull.size() < 3 or base == null or sheet == null:
+		return Image.new()
+	var base_rgba: Image = base.duplicate()
+	base_rgba.convert(Image.FORMAT_RGBA8)
+	var body := FaceApi._opaque_bbox(base_rgba, Rect2i(Vector2i.ZERO, base_rgba.get_size()))
+	if body.size.x <= 0:
+		return Image.new()
+	var head := FaceApi._light_region_bbox(base_rgba, body)
+	if head.size.x <= 0:
+		return Image.new()
+	var bounds := Rect2()
+	for point: Vector2 in hull:
+		bounds = bounds.expand(point)
+	var face := Rect2i(maxi(0, floori(bounds.position.x)), maxi(0, floori(bounds.position.y)), 0, 0)
+	face.size = Vector2i(mini(warped.get_width(), ceili(bounds.end.x)), mini(warped.get_height(), ceili(bounds.end.y))) - face.position
+	if face.size.x <= 0 or face.size.y <= 0:
+		return Image.new()
+	var patch := Image.create(face.size.x, face.size.y, false, Image.FORMAT_RGBA8)
+	for y: int in range(face.size.y):
+		for x: int in range(face.size.x):
+			var w := warped.get_pixel(face.position.x + x, face.position.y + y)
+			if w.a < 0.01:
+				continue
+			var m := clampf(_distance_to_hull(Vector2(face.position.x + x + 0.5, face.position.y + y + 0.5), hull) / FEATHER_PX, 0.0, 1.0) * w.a
+			if m <= 0.0:
+				continue
+			patch.set_pixel(x, y, Color(w.r * gain.x, w.g * gain.y, w.b * gain.z, m))
+	return FaceApi.bake_patch_into_sheet(patch, face, head, sheet, hframes, vframes, frame_count)
+
 ## 凸包填充遮罩（R8 单通道）。
 static func _build_mask(hull: PackedVector2Array, size: Vector2i) -> Image:
 	var mask := Image.create_empty(size.x, size.y, false, Image.FORMAT_R8)
