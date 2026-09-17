@@ -1,0 +1,832 @@
+[gd_scene load_steps=15 format=3]
+
+[ext_resource type="Script" path="res://scripts/detail_panel.gd" id="1_detail"]
+[ext_resource type="Theme" path="res://ui/theme.tres" id="2_theme"]
+
+; 颜色字面值全部对应 scripts/ui_theme.gd 的常量（.tscn 是静态数据，无法引用 GDScript 常量）。
+; 面板内坐标全部相对 Panel(860x680)，与原 _draw_detail_egg / _draw_detail_pet 的基线逐条对齐。
+;
+; 这里刻意不用任何 Container：Panel 用普通 Panel，状态行用普通 Control + 显式偏移。
+; 原因：Godot 的 Container 在「自身不可见」时不排序子节点（实测 PanelContainer 的子节点会停在 0x0），
+; 而 EggView/PetView 初始隐藏，靠容器会让首次显示错位一帧。普通 Control 的 anchors/offsets 与可见性无关。
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(1, 0.976471, 0.937255, 1) ; CREAM
+shadow_color = Color(0.356863, 0.290196, 0.247059, 0.18) ; SHADOW_WARM
+shadow_offset = Vector2(0, 6) ; 原 draw_panel 的暖色软投影 y+6
+corner_radius_top_left = 32 ; RADIUS_PANEL
+corner_radius_top_right = 32
+corner_radius_bottom_right = 32
+corner_radius_bottom_left = 32
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_frosting"]
+bg_color = Color(1, 0.419608, 0.541176, 1) ; CANDY_PINK
+corner_radius_top_left = 32 ; 只圆上沿，对应 draw_frosting
+corner_radius_top_right = 32
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dot_temperature"]
+bg_color = Color(1, 0.623529, 0.262745, 1) ; STATUS_TEMPERATURE #FF9F43
+corner_radius_top_left = 14 ; 28x28 圆
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dot_hunger"]
+bg_color = Color(1, 0.419608, 0.541176, 1) ; STATUS_HUNGER #FF6B8A
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dot_cleanliness"]
+bg_color = Color(0.309804, 0.717647, 1, 1) ; STATUS_CLEANLINESS #4FB7FF
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dot_mood"]
+bg_color = Color(1, 0.823529, 0.247059, 1) ; STATUS_MOOD / LEMON #FFD23F
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fill_temperature"]
+bg_color = Color(1, 0.623529, 0.262745, 1) ; STATUS_TEMPERATURE
+corner_radius_top_left = 999 ; draw_status_bar 的药丸
+corner_radius_top_right = 999
+corner_radius_bottom_right = 999
+corner_radius_bottom_left = 999
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fill_hunger"]
+bg_color = Color(1, 0.419608, 0.541176, 1) ; STATUS_HUNGER（同时用于亲密度条，原色即 CANDY_PINK）
+corner_radius_top_left = 999
+corner_radius_top_right = 999
+corner_radius_bottom_right = 999
+corner_radius_bottom_left = 999
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fill_cleanliness"]
+bg_color = Color(0.309804, 0.717647, 1, 1) ; STATUS_CLEANLINESS
+corner_radius_top_left = 999
+corner_radius_top_right = 999
+corner_radius_bottom_right = 999
+corner_radius_bottom_left = 999
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fill_mood"]
+bg_color = Color(1, 0.823529, 0.247059, 1) ; LEMON #FFD23F（同时用于孵化进度条，原色即 LEMON）
+corner_radius_top_left = 999
+corner_radius_top_right = 999
+corner_radius_bottom_right = 999
+corner_radius_bottom_left = 999
+
+; 命中区放大到 88x88（原 56x56，低于 88 触摸下限）；expand_margin 负值把可见圆收回到 56x56。
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_close"]
+content_margin_left = 0
+content_margin_top = 0
+content_margin_right = 0
+content_margin_bottom = 0
+expand_margin_left = -16.0
+expand_margin_top = -16.0
+expand_margin_right = -16.0
+expand_margin_bottom = -16.0
+bg_color = Color(0.960784, 0.913725, 0.835294, 1) ; CREAM_DARK
+corner_radius_top_left = 28 ; 56x56 圆
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_focus"]
+
+[node name="DetailPanel" type="Control"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_detail")
+
+[node name="Dim" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.356863, 0.290196, 0.247059, 0.35) ; DIM #5B4A3F 0.35（原文未随入场淡入）
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -430.0
+offset_top = -340.0
+offset_right = 430.0
+offset_bottom = 340.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(430, 340)
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Content" type="Control" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Frosting" type="Panel" parent="Panel/Content"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 12.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_frosting")
+
+[node name="EggView" type="Control" parent="Panel/Content"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="Panel/Content/EggView"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 48.0
+offset_top = 56.0 ; 原基线 panel.y+56+ascent(46)
+offset_bottom = 120.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_type_variation = &"TitleLabel"
+text = "一颗蛋"
+
+[node name="Sub" type="Label" parent="Panel/Content/EggView"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 48.0
+offset_top = 110.0 ; 原基线 panel.y+136
+offset_bottom = 144.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_type_variation = &"HintLabel"
+text = "普通蛋  ·  到家第 1 天"
+
+[node name="Progress" type="Label" parent="Panel/Content/EggView"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 48.0
+offset_top = 163.0 ; 原基线 panel.y+196
+offset_bottom = 205.0
+grow_horizontal = 2
+mouse_filter = 2
+text = "孵化进度  0%"
+
+[node name="Bar" type="ProgressBar" parent="Panel/Content/EggView"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 48.0
+offset_top = 216.0
+offset_right = -48.0
+offset_bottom = 238.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_styles/fill = SubResource("StyleBoxFlat_fill_mood")
+max_value = 1.0
+step = 0.0
+show_percentage = false
+
+[node name="Stats" type="Control" parent="Panel/Content/EggView"]
+layout_mode = 1
+offset_left = 24.0
+offset_top = 276.0 ; 行高 40 + 行距 46，首行圆点落在 276+6=282（原 panel.y+282）
+offset_right = 368.0
+offset_bottom = 454.0
+mouse_filter = 2
+
+[node name="StatRow0" type="Control" parent="Panel/Content/EggView/Stats"]
+layout_mode = 1
+offset_right = 344.0
+offset_bottom = 40.0
+mouse_filter = 2
+
+[node name="Dot" type="Panel" parent="Panel/Content/EggView/Stats/StatRow0"]
+layout_mode = 1
+offset_top = 6.0 ; (40-28)/2，行内垂直居中
+offset_right = 28.0
+offset_bottom = 34.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_dot_temperature")
+
+[node name="Char" type="Label" parent="Panel/Content/EggView/Stats/StatRow0/Dot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.976471, 0.937255, 1) ; CREAM
+theme_override_font_sizes/font_size = 20 ; 原 draw_label_centered(..., 20, ...)
+text = "温"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Bar" type="ProgressBar" parent="Panel/Content/EggView/Stats/StatRow0"]
+layout_mode = 1
+offset_left = 44.0 ; 28 + 16
+offset_top = 9.0 ; (40-22)/2
+offset_right = 264.0
+offset_bottom = 31.0
+mouse_filter = 2
+theme_override_styles/fill = SubResource("StyleBoxFlat_fill_temperature")
+show_percentage = false
+
+[node name="ValueBox" type="Control" parent="Panel/Content/EggView/Stats/StatRow0"]
+layout_mode = 1
+offset_left = 280.0 ; 44 + 220 + 16
+offset_top = 6.0
+offset_right = 344.0
+offset_bottom = 34.0
+mouse_filter = 2
+
+[node name="Value" type="Label" parent="Panel/Content/EggView/Stats/StatRow0/ValueBox"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"HintLabel"
+theme_override_colors/font_color = Color(0.356863, 0.290196, 0.247059, 1) ; INK，原数值字色
+text = "100"
+vertical_alignment = 1
+
+[node name="StatRow1" type="Control" parent="Panel/Content/EggView/Stats"]
+layout_mode = 1
+offset_top = 46.0
+offset_right = 344.0
+offset_bottom = 86.0
+mouse_filter = 2
+
+[node name="Dot" type="Panel" parent="Panel/Content/EggView/Stats/StatRow1"]
+layout_mode = 1
+offset_top = 6.0
+offset_right = 28.0
+offset_bottom = 34.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_dot_hunger")
+
+[node name="Char" type="Label" parent="Panel/Content/EggView/Stats/StatRow1/Dot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.976471, 0.937255, 1)
+theme_override_font_sizes/font_size = 20
+text = "饱"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Bar" type="ProgressBar" parent="Panel/Content/EggView/Stats/StatRow1"]
+layout_mode = 1
+offset_left = 44.0
+offset_top = 9.0
+offset_right = 264.0
+offset_bottom = 31.0
+mouse_filter = 2
+theme_override_styles/fill = SubResource("StyleBoxFlat_fill_hunger")
+show_percentage = false
+
+[node name="ValueBox" type="Control" parent="Panel/Content/EggView/Stats/StatRow1"]
+layout_mode = 1
+offset_left = 280.0
+offset_top = 6.0
+offset_right = 344.0
+offset_bottom = 34.0
+mouse_filter = 2
+
+[node name="Value" type="Label" parent="Panel/Content/EggView/Stats/StatRow1/ValueBox"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"HintLabel"
+theme_override_colors/font_color = Color(0.356863, 0.290196, 0.247059, 1)
+text = "100"
+vertical_alignment = 1
+
+[node name="StatRow2" type="Control" parent="Panel/Content/EggView/Stats"]
+layout_mode = 1
+offset_top = 92.0
+offset_right = 344.0
+offset_bottom = 132.0
+mouse_filter = 2
+
+[node name="Dot" type="Panel" parent="Panel/Content/EggView/Stats/StatRow2"]
+layout_mode = 1
+offset_top = 6.0
+offset_right = 28.0
+offset_bottom = 34.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_dot_cleanliness")
+
+[node name="Char" type="Label" parent="Panel/Content/EggView/Stats/StatRow2/Dot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.976471, 0.937255, 1)
+theme_override_font_sizes/font_size = 20
+text = "洁"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Bar" type="ProgressBar" parent="Panel/Content/EggView/Stats/StatRow2"]
+layout_mode = 1
+offset_left = 44.0
+offset_top = 9.0
+offset_right = 264.0
+offset_bottom = 31.0
+mouse_filter = 2
+theme_override_styles/fill = SubResource("StyleBoxFlat_fill_cleanliness")
+show_percentage = false
+
+[node name="ValueBox" type="Control" parent="Panel/Content/EggView/Stats/StatRow2"]
+layout_mode = 1
+offset_left = 280.0
+offset_top = 6.0
+offset_right = 344.0
+offset_bottom = 34.0
+mouse_filter = 2
+
+[node name="Value" type="Label" parent="Panel/Content/EggView/Stats/StatRow2/ValueBox"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"HintLabel"
+theme_override_colors/font_color = Color(0.356863, 0.290196, 0.247059, 1)
+text = "100"
+vertical_alignment = 1
+
+[node name="StatRow3" type="Control" parent="Panel/Content/EggView/Stats"]
+layout_mode = 1
+offset_top = 138.0
+offset_right = 344.0
+offset_bottom = 178.0
+mouse_filter = 2
+
+[node name="Dot" type="Panel" parent="Panel/Content/EggView/Stats/StatRow3"]
+layout_mode = 1
+offset_top = 6.0
+offset_right = 28.0
+offset_bottom = 34.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_dot_mood")
+
+[node name="Char" type="Label" parent="Panel/Content/EggView/Stats/StatRow3/Dot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.976471, 0.937255, 1)
+theme_override_font_sizes/font_size = 20
+text = "心"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Bar" type="ProgressBar" parent="Panel/Content/EggView/Stats/StatRow3"]
+layout_mode = 1
+offset_left = 44.0
+offset_top = 9.0
+offset_right = 264.0
+offset_bottom = 31.0
+mouse_filter = 2
+theme_override_styles/fill = SubResource("StyleBoxFlat_fill_mood")
+show_percentage = false
+
+[node name="ValueBox" type="Control" parent="Panel/Content/EggView/Stats/StatRow3"]
+layout_mode = 1
+offset_left = 280.0
+offset_top = 6.0
+offset_right = 344.0
+offset_bottom = 34.0
+mouse_filter = 2
+
+[node name="Value" type="Label" parent="Panel/Content/EggView/Stats/StatRow3/ValueBox"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"HintLabel"
+theme_override_colors/font_color = Color(0.356863, 0.290196, 0.247059, 1)
+text = "100"
+vertical_alignment = 1
+
+[node name="HintA" type="Label" parent="Panel/Content/EggView"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 48.0
+offset_top = 498.0 ; 原基线 panel.y+524
+offset_bottom = 532.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_type_variation = &"HintLabel"
+text = "把四项状态保持在 60 以上，蛋会舒服地长大。"
+
+[node name="HintB" type="Label" parent="Panel/Content/EggView"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 48.0
+offset_top = 534.0 ; 原基线 panel.y+560
+offset_bottom = 568.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_type_variation = &"HintLabel"
+text = "点下方「加速」可以让它早点破壳。"
+
+[node name="PetView" type="Control" parent="Panel/Content"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="Panel/Content/PetView"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 48.0
+offset_top = 56.0
+offset_bottom = 120.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_type_variation = &"TitleLabel"
+text = "壳壳布丁"
+
+[node name="Sub" type="Label" parent="Panel/Content/PetView"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 48.0
+offset_top = 110.0
+offset_bottom = 144.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_type_variation = &"HintLabel"
+text = "Shell Pudding  ·  相伴第 1 天"
+
+[node name="Intimacy" type="Label" parent="Panel/Content/PetView"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 48.0
+offset_top = 163.0 ; 原基线 panel.y+196
+offset_bottom = 205.0
+grow_horizontal = 2
+mouse_filter = 2
+text = "亲密度  Stranger"
+
+[node name="Bar" type="ProgressBar" parent="Panel/Content/PetView"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 48.0
+offset_top = 216.0
+offset_right = -48.0
+offset_bottom = 238.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_styles/fill = SubResource("StyleBoxFlat_fill_hunger")
+max_value = 1.0
+step = 0.0
+show_percentage = false
+
+[node name="Hint" type="Label" parent="Panel/Content/PetView"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 48.0
+offset_top = 236.0 ; 原基线 panel.y+262
+offset_bottom = 270.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_type_variation = &"HintLabel"
+text = "多陪陪它，亲密度会慢慢长上来。"
+
+[node name="Stats" type="Control" parent="Panel/Content/PetView"]
+layout_mode = 1
+offset_left = 24.0
+offset_top = 300.0 ; 首行圆点落在 300+6=306（原 panel.y+306）
+offset_right = 368.0
+offset_bottom = 478.0
+mouse_filter = 2
+
+[node name="StatRow0" type="Control" parent="Panel/Content/PetView/Stats"]
+layout_mode = 1
+offset_right = 344.0
+offset_bottom = 40.0
+mouse_filter = 2
+
+[node name="Dot" type="Panel" parent="Panel/Content/PetView/Stats/StatRow0"]
+layout_mode = 1
+offset_top = 6.0
+offset_right = 28.0
+offset_bottom = 34.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_dot_temperature")
+
+[node name="Char" type="Label" parent="Panel/Content/PetView/Stats/StatRow0/Dot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.976471, 0.937255, 1)
+theme_override_font_sizes/font_size = 20
+text = "温"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Bar" type="ProgressBar" parent="Panel/Content/PetView/Stats/StatRow0"]
+layout_mode = 1
+offset_left = 44.0
+offset_top = 9.0
+offset_right = 264.0
+offset_bottom = 31.0
+mouse_filter = 2
+theme_override_styles/fill = SubResource("StyleBoxFlat_fill_temperature")
+show_percentage = false
+
+[node name="ValueBox" type="Control" parent="Panel/Content/PetView/Stats/StatRow0"]
+layout_mode = 1
+offset_left = 280.0
+offset_top = 6.0
+offset_right = 344.0
+offset_bottom = 34.0
+mouse_filter = 2
+
+[node name="Value" type="Label" parent="Panel/Content/PetView/Stats/StatRow0/ValueBox"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"HintLabel"
+theme_override_colors/font_color = Color(0.356863, 0.290196, 0.247059, 1)
+text = "100"
+vertical_alignment = 1
+
+[node name="StatRow1" type="Control" parent="Panel/Content/PetView/Stats"]
+layout_mode = 1
+offset_top = 46.0
+offset_right = 344.0
+offset_bottom = 86.0
+mouse_filter = 2
+
+[node name="Dot" type="Panel" parent="Panel/Content/PetView/Stats/StatRow1"]
+layout_mode = 1
+offset_top = 6.0
+offset_right = 28.0
+offset_bottom = 34.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_dot_hunger")
+
+[node name="Char" type="Label" parent="Panel/Content/PetView/Stats/StatRow1/Dot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.976471, 0.937255, 1)
+theme_override_font_sizes/font_size = 20
+text = "饱"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Bar" type="ProgressBar" parent="Panel/Content/PetView/Stats/StatRow1"]
+layout_mode = 1
+offset_left = 44.0
+offset_top = 9.0
+offset_right = 264.0
+offset_bottom = 31.0
+mouse_filter = 2
+theme_override_styles/fill = SubResource("StyleBoxFlat_fill_hunger")
+show_percentage = false
+
+[node name="ValueBox" type="Control" parent="Panel/Content/PetView/Stats/StatRow1"]
+layout_mode = 1
+offset_left = 280.0
+offset_top = 6.0
+offset_right = 344.0
+offset_bottom = 34.0
+mouse_filter = 2
+
+[node name="Value" type="Label" parent="Panel/Content/PetView/Stats/StatRow1/ValueBox"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"HintLabel"
+theme_override_colors/font_color = Color(0.356863, 0.290196, 0.247059, 1)
+text = "100"
+vertical_alignment = 1
+
+[node name="StatRow2" type="Control" parent="Panel/Content/PetView/Stats"]
+layout_mode = 1
+offset_top = 92.0
+offset_right = 344.0
+offset_bottom = 132.0
+mouse_filter = 2
+
+[node name="Dot" type="Panel" parent="Panel/Content/PetView/Stats/StatRow2"]
+layout_mode = 1
+offset_top = 6.0
+offset_right = 28.0
+offset_bottom = 34.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_dot_cleanliness")
+
+[node name="Char" type="Label" parent="Panel/Content/PetView/Stats/StatRow2/Dot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.976471, 0.937255, 1)
+theme_override_font_sizes/font_size = 20
+text = "洁"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Bar" type="ProgressBar" parent="Panel/Content/PetView/Stats/StatRow2"]
+layout_mode = 1
+offset_left = 44.0
+offset_top = 9.0
+offset_right = 264.0
+offset_bottom = 31.0
+mouse_filter = 2
+theme_override_styles/fill = SubResource("StyleBoxFlat_fill_cleanliness")
+show_percentage = false
+
+[node name="ValueBox" type="Control" parent="Panel/Content/PetView/Stats/StatRow2"]
+layout_mode = 1
+offset_left = 280.0
+offset_top = 6.0
+offset_right = 344.0
+offset_bottom = 34.0
+mouse_filter = 2
+
+[node name="Value" type="Label" parent="Panel/Content/PetView/Stats/StatRow2/ValueBox"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"HintLabel"
+theme_override_colors/font_color = Color(0.356863, 0.290196, 0.247059, 1)
+text = "100"
+vertical_alignment = 1
+
+[node name="StatRow3" type="Control" parent="Panel/Content/PetView/Stats"]
+layout_mode = 1
+offset_top = 138.0
+offset_right = 344.0
+offset_bottom = 178.0
+mouse_filter = 2
+
+[node name="Dot" type="Panel" parent="Panel/Content/PetView/Stats/StatRow3"]
+layout_mode = 1
+offset_top = 6.0
+offset_right = 28.0
+offset_bottom = 34.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_dot_mood")
+
+[node name="Char" type="Label" parent="Panel/Content/PetView/Stats/StatRow3/Dot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.976471, 0.937255, 1)
+theme_override_font_sizes/font_size = 20
+text = "心"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Bar" type="ProgressBar" parent="Panel/Content/PetView/Stats/StatRow3"]
+layout_mode = 1
+offset_left = 44.0
+offset_top = 9.0
+offset_right = 264.0
+offset_bottom = 31.0
+mouse_filter = 2
+theme_override_styles/fill = SubResource("StyleBoxFlat_fill_mood")
+show_percentage = false
+
+[node name="ValueBox" type="Control" parent="Panel/Content/PetView/Stats/StatRow3"]
+layout_mode = 1
+offset_left = 280.0
+offset_top = 6.0
+offset_right = 344.0
+offset_bottom = 34.0
+mouse_filter = 2
+
+[node name="Value" type="Label" parent="Panel/Content/PetView/Stats/StatRow3/ValueBox"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"HintLabel"
+theme_override_colors/font_color = Color(0.356863, 0.290196, 0.247059, 1)
+text = "100"
+vertical_alignment = 1
+
+[node name="Look" type="Label" parent="Panel/Content/PetView"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 48.0
+offset_top = 522.0 ; 原基线 panel.y+548
+offset_bottom = 556.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_type_variation = &"HintLabel"
+text = "外貌：默认样貌  ·  动作：继续照护可解锁新动作"
+
+[node name="CloseButton" type="Button" parent="Panel/Content"]
+custom_minimum_size = Vector2(88, 88)
+layout_mode = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -120.0
+offset_top = 12.0
+offset_right = -32.0
+offset_bottom = 100.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(0.356863, 0.290196, 0.247059, 1) ; INK
+theme_override_font_sizes/font_size = 30
+theme_override_styles/normal = SubResource("StyleBoxFlat_close")
+theme_override_styles/hover = SubResource("StyleBoxFlat_close")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_close")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_focus")
+text = "×"

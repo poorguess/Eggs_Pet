@@ -1,0 +1,147 @@
+[gd_scene load_steps=7 format=3]
+
+; 取景覆盖层。颜色字面值来自 scripts/ui_theme.gd（与 ui/theme.tres 同样的注释约定）：
+; CREAM #FFF9EF / CANDY_PINK #FF6B8A / SHADOW_WARM #5B4A3F@0.18。
+; 深色背板由 face_preview.gd 在运行时用 UiTheme.INK.darkened(0.55) 覆盖。
+
+[ext_resource type="Script" path="res://scripts/face_preview.gd" id="1_script"]
+[ext_resource type="Theme" path="res://ui/theme.tres" id="2_theme"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_shutter"]
+bg_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 999
+corner_radius_top_right = 999
+corner_radius_bottom_right = 999
+corner_radius_bottom_left = 999
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_iris"]
+; 原 draw_arc(center, 66, ..., 12.0)：环带覆盖半径 60~72，即 144 外框内缩 12。
+draw_center = false
+border_width_left = 12
+border_width_top = 12
+border_width_right = 12
+border_width_bottom = 12
+border_color = Color(1, 0.419608, 0.541176, 1) ; CANDY_PINK
+corner_radius_top_left = 999
+corner_radius_top_right = 999
+corner_radius_bottom_right = 999
+corner_radius_bottom_left = 999
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_shutter_shadow"]
+bg_color = Color(0.356863, 0.290196, 0.247059, 0.18) ; SHADOW_WARM
+corner_radius_top_left = 999
+corner_radius_top_right = 999
+corner_radius_bottom_right = 999
+corner_radius_bottom_left = 999
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_close"]
+; 静态外观 88x88（= 原 draw_circle 半径 44），负 expand 让 96x96 的控件画出 88 的圆。
+bg_color = Color(1, 0.976471, 0.937255, 0.92) ; CREAM @ 0.92
+corner_radius_top_left = 999
+corner_radius_top_right = 999
+corner_radius_bottom_right = 999
+corner_radius_bottom_left = 999
+expand_margin_left = -4.0
+expand_margin_top = -4.0
+expand_margin_right = -4.0
+expand_margin_bottom = -4.0
+
+[node name="FacePreview" type="Control"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.160588, 0.130588, 0.111176, 1) ; UiTheme.INK.darkened(0.55)，_ready 里再覆盖一次
+
+[node name="Camera" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1 ; EXPAND_IGNORE_SIZE：让锚点决定尺寸，不被贴图撑大
+stretch_mode = 6 ; STRETCH_KEEP_ASPECT_COVERED：等价原 draw_texture_rect_region 的中心裁切
+
+[node name="Viewfinder" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Hint" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 1624.0
+offset_bottom = 1664.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_type_variation = &"HintLabel"
+theme_override_colors/font_color = Color(1, 0.976471, 0.937255, 1) ; CREAM
+text = "把脸放进圆圈里，保持正面"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ShutterShadow" type="Panel" parent="."]
+layout_mode = 1
+offset_left = 452.0
+offset_top = 1696.0
+offset_right = 628.0
+offset_bottom = 1872.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_shutter_shadow")
+
+[node name="Shutter" type="Button" parent="."]
+layout_mode = 1
+offset_left = 452.0
+offset_top = 1688.0
+offset_right = 628.0
+offset_bottom = 1864.0
+theme_override_styles/focus = SubResource("StyleBoxFlat_shutter")
+theme_override_styles/hover = SubResource("StyleBoxFlat_shutter")
+theme_override_styles/normal = SubResource("StyleBoxFlat_shutter")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_shutter")
+
+[node name="Iris" type="Panel" parent="Shutter"]
+layout_mode = 1
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 160.0
+offset_bottom = 160.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_iris")
+
+[node name="Close" type="Button" parent="."]
+layout_mode = 1
+offset_left = 48.0
+offset_top = 48.0
+offset_right = 144.0
+offset_bottom = 144.0
+theme_override_colors/font_color = Color(0.356863, 0.290196, 0.247059, 1) ; INK
+theme_override_colors/font_hover_color = Color(0.356863, 0.290196, 0.247059, 1) ; INK
+theme_override_colors/font_pressed_color = Color(0.356863, 0.290196, 0.247059, 1) ; INK
+theme_override_font_sizes/font_size = 46 ; FONT_TITLE
+theme_override_styles/focus = SubResource("StyleBoxFlat_close")
+theme_override_styles/hover = SubResource("StyleBoxFlat_close")
+theme_override_styles/normal = SubResource("StyleBoxFlat_close")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_close")
+text = "×"

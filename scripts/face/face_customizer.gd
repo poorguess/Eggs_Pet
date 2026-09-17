@@ -41,8 +41,10 @@ func _ready() -> void:
 	for side: String in ["left", "right", "top", "bottom"]:
 		margin.add_theme_constant_override("margin_" + side, 32)
 	add_child(margin)
-	var columns := HBoxContainer.new()
-	columns.add_theme_constant_override("separation", 28)
+	# Portrait phones use a single readable column: preview first, then the
+	# scrollable controls. This keeps every touch target inside the safe width.
+	var columns := VBoxContainer.new()
+	columns.add_theme_constant_override("separation", 20)
 	margin.add_child(columns)
 	var left := VBoxContainer.new()
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -62,6 +64,7 @@ func _ready() -> void:
 	left.add_child(hint)
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	columns.add_child(scroll)
 	var panel := VBoxContainer.new()

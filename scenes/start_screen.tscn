@@ -1,6 +1,245 @@
-[gd_scene format=3 uid="uid://dskt8yf0gxmip"]
+[gd_scene load_steps=8 format=3]
 
-[ext_resource type="Script" uid="uid://d048yvypegyfy" path="res://scripts/start_screen.gd" id="1_start"]
+[ext_resource type="Script" path="res://scripts/start_screen.gd" id="1_start"]
+[ext_resource type="Theme" path="res://ui/theme.tres" id="2_theme"]
+[ext_resource type="Texture2D" path="res://assets/eggs_pics/Newegg.png" id="3_egg"]
 
-[node name="StartScreen" type="Node2D" unique_id=105711635]
+; 颜色字面值全部对应 scripts/ui_theme.gd 的常量（.tscn 是静态数据，无法引用 GDScript 常量）。
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dialog"]
+bg_color = Color(1, 0.976471, 0.937255, 1) ; CREAM #FFF9EF（原 UiTheme.draw_panel 的 fill）
+shadow_color = Color(0.356863, 0.290196, 0.247059, 0.18) ; SHADOW_WARM
+shadow_offset = Vector2(0, 6) ; 原 draw_panel 的暖色软投影 y+6
+corner_radius_top_left = 32 ; RADIUS_PANEL
+corner_radius_top_right = 32
+corner_radius_bottom_right = 32
+corner_radius_bottom_left = 32
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_frosting"]
+bg_color = Color(1, 0.352941, 0.352941, 1) ; DANGER #FF5A5A（原 draw_frosting 传 UiTheme.DANGER）
+corner_radius_top_left = 32 ; RADIUS_PANEL，只圆上两角
+corner_radius_top_right = 32
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_danger_normal"]
+content_margin_left = 40 ; 与 theme.tres 的 Button/styles/normal 同值
+content_margin_top = 23
+content_margin_right = 40
+content_margin_bottom = 23
+bg_color = Color(1, 0.352941, 0.352941, 1) ; DANGER #FF5A5A（原 draw_candy_button 传 UiTheme.DANGER）
+border_width_bottom = 4 ; BUTTON_EDGE
+border_color = Color(0.85, 0.3, 0.3, 1) ; DANGER.darkened(0.15)，对应原调用处的 UiTheme.DANGER.darkened(0.15)
+corner_radius_top_left = 999 ; 圆角=高度/2，同 theme.tres
+corner_radius_top_right = 999
+corner_radius_bottom_right = 999
+corner_radius_bottom_left = 999
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_danger_pressed"]
+content_margin_left = 40 ; 同 danger_normal
+content_margin_top = 27 ; normal 的 23 + PRESS_DROP(4)
+content_margin_right = 40
+content_margin_bottom = 19 ; normal 的 23 - PRESS_DROP(4)
+bg_color = Color(1, 0.352941, 0.352941, 1) ; DANGER #FF5A5A
+corner_radius_top_left = 999
+corner_radius_top_right = 999
+corner_radius_bottom_right = 999
+corner_radius_bottom_left = 999
+
+[node name="StartScreen" type="Control"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
 script = ExtResource("1_start")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 0.976471, 0.937255, 1) ; CREAM #FFF9EF
+
+[node name="Title" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+offset_top = 204.0
+offset_bottom = 336.0
+theme_override_font_sizes/font_size = 96 ; 原 _draw() 里 draw_string 的 96；ui_theme.gd 无对应常量，故就地覆写
+text = "蛋岛"
+horizontal_alignment = 1
+
+[node name="Tagline" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+offset_top = 256.0
+offset_bottom = 298.0
+text = "一颗蛋，正在等你"
+horizontal_alignment = 1
+
+[node name="Blurb" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+offset_top = 300.0
+offset_bottom = 334.0
+theme_type_variation = &"HintLabel"
+text = "在安静的小岛上，慢慢照顾它长大。"
+horizontal_alignment = 1
+
+[node name="EggShadow" type="Polygon2D" parent="."]
+position = Vector2(540, 1140.08)
+color = Color(0.356863, 0.290196, 0.247059, 0.1) ; INK #5B4A3F alpha=0.10（原 _draw_shadow_ellipse）
+polygon = PackedVector2Array(150, 0, 148.153, 2.816, 142.658, 5.562, 133.651, 8.172, 121.353, 10.58, 106.066, 12.728, 88.168, 14.562, 68.099, 16.038, 46.353, 17.119, 23.465, 17.778, 0, 18, -23.465, 17.778, -46.353, 17.119, -68.099, 16.038, -88.168, 14.562, -106.066, 12.728, -121.353, 10.58, -133.651, 8.172, -142.658, 5.562, -148.153, 2.816, -150, 0, -148.153, -2.816, -142.658, -5.562, -133.651, -8.172, -121.353, -10.58, -106.066, -12.728, -88.168, -14.562, -68.099, -16.038, -46.353, -17.119, -23.465, -17.778, 0, -18, 23.465, -17.778, 46.353, -17.119, 68.099, -16.038, 88.168, -14.562, 106.066, -12.728, 121.353, -10.58, 133.651, -8.172, 142.658, -5.562, 148.153, -2.816) ; 40 点椭圆，半径 (150,18)，逐点复刻原 _draw_shadow_ellipse
+
+[node name="Egg" type="Sprite2D" parent="."]
+position = Vector2(540, 960)
+scale = Vector2(0.28, 0.28)
+texture = ExtResource("3_egg")
+
+[node name="SavePrompt" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+offset_top = 1630.0
+offset_bottom = 1664.0
+theme_type_variation = &"HintLabel"
+text = "欢迎回来，它一直在等你。"
+horizontal_alignment = 1
+
+[node name="FreshPrompt" type="Label" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+offset_top = 1630.0
+offset_bottom = 1664.0
+theme_type_variation = &"HintLabel"
+text = "准备好了吗？"
+horizontal_alignment = 1
+
+[node name="SecondaryButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 204.0
+offset_top = 1736.0
+offset_right = 524.0
+offset_bottom = 1824.0
+focus_mode = 0
+theme_type_variation = &"SecondaryButton"
+text = "重新开始"
+
+[node name="PrimaryButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 556.0
+offset_top = 1736.0
+offset_right = 876.0
+offset_bottom = 1824.0
+focus_mode = 0
+text = "继续游戏"
+
+[node name="StartButton" type="Button" parent="."]
+visible = false
+layout_mode = 0
+offset_left = 380.0
+offset_top = 1736.0
+offset_right = 700.0
+offset_bottom = 1824.0
+focus_mode = 0
+text = "开始"
+
+[node name="Footer" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+offset_top = 1846.0
+offset_bottom = 1880.0
+theme_type_variation = &"HintLabel"
+text = "竖屏体验 · 轻柔照护 · 随时回来"
+horizontal_alignment = 1
+
+[node name="ConfirmOverlay" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dim" type="ColorRect" parent="ConfirmOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.356863, 0.290196, 0.247059, 0.35) ; DIM = INK #5B4A3F alpha=0.35
+
+[node name="DialogPanel" type="Panel" parent="ConfirmOverlay"]
+layout_mode = 0
+offset_left = 220.0
+offset_top = 750.0
+offset_right = 860.0
+offset_bottom = 1170.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_dialog")
+
+[node name="Frosting" type="Panel" parent="ConfirmOverlay/DialogPanel"]
+layout_mode = 0
+offset_right = 640.0
+offset_bottom = 12.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_frosting")
+
+[node name="DialogTitle" type="Label" parent="ConfirmOverlay/DialogPanel"]
+layout_mode = 0
+offset_left = 48.0
+offset_top = 56.0
+offset_right = 592.0
+offset_bottom = 120.0
+theme_override_font_sizes/font_size = 46 ; FONT_TITLE
+text = "重新开始？"
+
+[node name="DialogBody" type="Label" parent="ConfirmOverlay/DialogPanel"]
+layout_mode = 0
+offset_left = 48.0
+offset_top = 124.0
+offset_right = 592.0
+offset_bottom = 192.0
+theme_type_variation = &"HintLabel"
+theme_override_constants/line_spacing = 8 ; 原 draw_multiline_string 的 line_spacing 参数
+text = "会清空当前的蛋、孵化进度和照片，
+回到第一天重新来过。"
+
+[node name="CancelButton" type="Button" parent="ConfirmOverlay/DialogPanel"]
+layout_mode = 0
+offset_left = 48.0
+offset_top = 292.0
+offset_right = 308.0
+offset_bottom = 380.0
+focus_mode = 0
+theme_type_variation = &"SecondaryButton"
+text = "取消"
+
+[node name="ConfirmButton" type="Button" parent="ConfirmOverlay/DialogPanel"]
+layout_mode = 0
+offset_left = 332.0
+offset_top = 292.0
+offset_right = 592.0
+offset_bottom = 380.0
+focus_mode = 0
+theme_override_colors/font_color = Color(1, 0.976471, 0.937255, 1) ; CREAM #FFF9EF
+theme_override_colors/font_hover_color = Color(1, 0.976471, 0.937255, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.976471, 0.937255, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_danger_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_danger_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_danger_pressed")
+text = "确定重置"

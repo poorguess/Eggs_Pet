@@ -23,6 +23,10 @@ const STATUS_HUNGER := Color("#FF6B8A")
 const STATUS_CLEANLINESS := Color("#4FB7FF")
 const STATUS_MOOD := Color("#FFD23F")
 
+# 浮空小岛的天空底：由 SKY → CREAM 派生，不引入新色相。
+const SKY_TOP := Color("#BCE0F5")
+const SKY_BOTTOM := CREAM
+
 const RADIUS_PANEL := 32.0
 const RADIUS_CARD := 24.0
 const BUTTON_EDGE := 4.0

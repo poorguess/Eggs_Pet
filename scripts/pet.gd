@@ -6,7 +6,7 @@ const HFRAMES := 4
 const VFRAMES := 9
 const FRAME_COUNT := 33
 
-@export var roam_center := Vector2(960, 400)
+@export var roam_center := Vector2(540, 890)
 @export var roam_radius := Vector2(520, 190)
 @export var pet_scale := 0.45
 @export var default_faces_left := true
@@ -15,7 +15,7 @@ const FRAME_COUNT := 33
 @export var idle_fps := 8.0
 @export var walk_fps := 10.0
 
-var sprite: Sprite2D
+@onready var sprite: Sprite2D = $Sprite
 var features: PetFaceOverlay
 var _state := "idle"
 var _fps := 8.0
@@ -25,12 +25,6 @@ var _target := Vector2.ZERO
 var _speed := 70.0
 
 func _ready() -> void:
-	sprite = Sprite2D.new()
-	sprite.texture = SHEET
-	sprite.hframes = HFRAMES
-	sprite.vframes = VFRAMES
-	sprite.frame = 0
-	add_child(sprite)
 	scale = Vector2.ONE * pet_scale
 	position = roam_center
 	play_idle()

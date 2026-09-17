@@ -1,0 +1,546 @@
+[gd_scene load_steps=17 format=3]
+
+[ext_resource type="Script" path="res://scripts/hud.gd" id="1_hud"]
+[ext_resource type="Theme" path="res://ui/theme.tres" id="2_theme"]
+[ext_resource type="Texture2D" path="res://assets/ui/camera.png" id="3_camera"]
+
+; 颜色字面值全部对应 scripts/ui_theme.gd 的常量（.tscn 是静态数据，无法引用 GDScript 常量）。
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_status_panel"]
+content_margin_left = 24
+content_margin_top = 24
+content_margin_right = 24
+content_margin_bottom = 24
+bg_color = Color(1, 0.976471, 0.937255, 0.92) ; CREAM #FFF9EF（原 draw_panel alpha=0.92）
+shadow_color = Color(0.356863, 0.290196, 0.247059, 0.166) ; SHADOW_WARM #5B4A3F 0.18*0.92
+shadow_offset = Vector2(0, 6) ; 原 draw_panel 的暖色软投影 y+6
+corner_radius_top_left = 32 ; RADIUS_PANEL
+corner_radius_top_right = 32
+corner_radius_bottom_right = 32
+corner_radius_bottom_left = 32
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_toast_panel"]
+bg_color = Color(1, 0.976471, 0.937255, 0.96) ; CREAM，原 toast alpha=0.96
+shadow_color = Color(0.356863, 0.290196, 0.247059, 0.173)
+shadow_offset = Vector2(0, 6)
+corner_radius_top_left = 32
+corner_radius_top_right = 32
+corner_radius_bottom_right = 32
+corner_radius_bottom_left = 32
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_solid_panel"]
+bg_color = Color(1, 0.976471, 0.937255, 1) ; CREAM，原孵化面板 alpha=1
+shadow_color = Color(0.356863, 0.290196, 0.247059, 0.18)
+shadow_offset = Vector2(0, 6)
+corner_radius_top_left = 32
+corner_radius_top_right = 32
+corner_radius_bottom_right = 32
+corner_radius_bottom_left = 32
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dot_temperature"]
+bg_color = Color(1, 0.623529, 0.262745, 1) ; STATUS_TEMPERATURE #FF9F43
+corner_radius_top_left = 14 ; 28x28 圆
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dot_hunger"]
+bg_color = Color(1, 0.419608, 0.541176, 1) ; STATUS_HUNGER #FF6B8A
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dot_cleanliness"]
+bg_color = Color(0.309804, 0.717647, 1, 1) ; STATUS_CLEANLINESS #4FB7FF
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dot_mood"]
+bg_color = Color(1, 0.823529, 0.247059, 1) ; STATUS_MOOD #FFD23F
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fill_temperature"]
+bg_color = Color(1, 0.623529, 0.262745, 1) ; STATUS_TEMPERATURE
+corner_radius_top_left = 999 ; 对应 draw_status_bar 的 size.y*0.5 药丸
+corner_radius_top_right = 999
+corner_radius_bottom_right = 999
+corner_radius_bottom_left = 999
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fill_hunger"]
+bg_color = Color(1, 0.419608, 0.541176, 1) ; STATUS_HUNGER
+corner_radius_top_left = 999
+corner_radius_top_right = 999
+corner_radius_bottom_right = 999
+corner_radius_bottom_left = 999
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fill_cleanliness"]
+bg_color = Color(0.309804, 0.717647, 1, 1) ; STATUS_CLEANLINESS
+corner_radius_top_left = 999
+corner_radius_top_right = 999
+corner_radius_bottom_right = 999
+corner_radius_bottom_left = 999
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fill_mood"]
+bg_color = Color(1, 0.823529, 0.247059, 1) ; STATUS_MOOD
+corner_radius_top_left = 999
+corner_radius_top_right = 999
+corner_radius_bottom_right = 999
+corner_radius_bottom_left = 999
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fab"]
+content_margin_left = 0 ; 图标按 120x120 满框居中，不走主题的 40/18 文本留白
+content_margin_top = 0
+content_margin_right = 0
+content_margin_bottom = 0
+bg_color = Color(1, 0.976471, 0.937255, 1) ; CREAM
+border_width_left = 6 ; 原 draw_arc(radius 57, width 6) → 环占 r∈[54,60]
+border_width_top = 6
+border_width_right = 6
+border_width_bottom = 6
+border_color = Color(1, 0.419608, 0.541176, 1) ; CANDY_PINK
+shadow_color = Color(0.356863, 0.290196, 0.247059, 0.18) ; SHADOW_WARM
+shadow_offset = Vector2(0, 6)
+corner_radius_top_left = 60 ; 120x120 圆
+corner_radius_top_right = 60
+corner_radius_bottom_right = 60
+corner_radius_bottom_left = 60
+
+; 原 immediate-mode 绘制没有焦点框，Control 化后要显式清掉，否则点一下 FAB 会留下主题默认焦点环。
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_focus"]
+
+[node name="Hud" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+theme = ExtResource("2_theme")
+script = ExtResource("1_hud")
+
+[node name="SafeArea" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="Layout" type="Control" parent="SafeArea"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Title" type="VBoxContainer" parent="SafeArea/Layout"]
+layout_mode = 1
+offset_left = 40.0
+offset_top = 40.0
+offset_right = 440.0
+offset_bottom = 132.0
+mouse_filter = 2
+theme_override_constants/separation = -6 ; 副标题基线固定在标题下 84px（main_island._draw_title），负间距复现该紧凑排布
+
+[node name="Name" type="Label" parent="SafeArea/Layout/Title"]
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+text = "蛋岛"
+
+[node name="Sub" type="Label" parent="SafeArea/Layout/Title"]
+layout_mode = 2
+theme_type_variation = &"HintLabel"
+text = "浮空小岛  /  第一天"
+
+[node name="StatusPanel" type="PanelContainer" parent="SafeArea/Layout"]
+layout_mode = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -432.0
+offset_top = 40.0
+offset_right = -40.0
+offset_bottom = 324.0
+grow_horizontal = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_status_panel")
+
+[node name="Rows" type="VBoxContainer" parent="SafeArea/Layout/StatusPanel"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6 ; 6+StatRow(40)=46 行距；名字行 42+6=48，使首行圆点落在面板内 78px
+
+[node name="CreatureName" type="Label" parent="SafeArea/Layout/StatusPanel/Rows"]
+layout_mode = 2
+mouse_filter = 2
+text = "一颗蛋  ·  孵化中"
+
+[node name="StatRow0" type="HBoxContainer" parent="SafeArea/Layout/StatusPanel/Rows"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 40)
+mouse_filter = 2
+theme_override_constants/separation = 16
+
+[node name="Dot" type="PanelContainer" parent="SafeArea/Layout/StatusPanel/Rows/StatRow0"]
+layout_mode = 2
+custom_minimum_size = Vector2(28, 28)
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_dot_temperature")
+
+[node name="Char" type="Label" parent="SafeArea/Layout/StatusPanel/Rows/StatRow0/Dot"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.976471, 0.937255, 1) ; CREAM，画在状态色圆点上
+theme_override_font_sizes/font_size = 20 ; 原 draw_label_centered(..., 20, ...)
+text = "温"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Bar" type="ProgressBar" parent="SafeArea/Layout/StatusPanel/Rows/StatRow0"]
+layout_mode = 2
+custom_minimum_size = Vector2(220, 22)
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/fill = SubResource("StyleBoxFlat_fill_temperature")
+show_percentage = false
+
+[node name="ValueBox" type="Control" parent="SafeArea/Layout/StatusPanel/Rows/StatRow0"]
+custom_minimum_size = Vector2(64, 28)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Value" type="Label" parent="SafeArea/Layout/StatusPanel/Rows/StatRow0/ValueBox"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"HintLabel"
+theme_override_colors/font_color = Color(0.356863, 0.290196, 0.247059, 1) ; INK，原数值字色
+text = "100"
+vertical_alignment = 1
+
+[node name="StatRow1" type="HBoxContainer" parent="SafeArea/Layout/StatusPanel/Rows"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 40)
+mouse_filter = 2
+theme_override_constants/separation = 16
+
+[node name="Dot" type="PanelContainer" parent="SafeArea/Layout/StatusPanel/Rows/StatRow1"]
+layout_mode = 2
+custom_minimum_size = Vector2(28, 28)
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_dot_hunger")
+
+[node name="Char" type="Label" parent="SafeArea/Layout/StatusPanel/Rows/StatRow1/Dot"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.976471, 0.937255, 1)
+theme_override_font_sizes/font_size = 20
+text = "饱"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Bar" type="ProgressBar" parent="SafeArea/Layout/StatusPanel/Rows/StatRow1"]
+layout_mode = 2
+custom_minimum_size = Vector2(220, 22)
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/fill = SubResource("StyleBoxFlat_fill_hunger")
+show_percentage = false
+
+[node name="ValueBox" type="Control" parent="SafeArea/Layout/StatusPanel/Rows/StatRow1"]
+custom_minimum_size = Vector2(64, 28)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Value" type="Label" parent="SafeArea/Layout/StatusPanel/Rows/StatRow1/ValueBox"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"HintLabel"
+theme_override_colors/font_color = Color(0.356863, 0.290196, 0.247059, 1)
+text = "100"
+vertical_alignment = 1
+
+[node name="StatRow2" type="HBoxContainer" parent="SafeArea/Layout/StatusPanel/Rows"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 40)
+mouse_filter = 2
+theme_override_constants/separation = 16
+
+[node name="Dot" type="PanelContainer" parent="SafeArea/Layout/StatusPanel/Rows/StatRow2"]
+layout_mode = 2
+custom_minimum_size = Vector2(28, 28)
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_dot_cleanliness")
+
+[node name="Char" type="Label" parent="SafeArea/Layout/StatusPanel/Rows/StatRow2/Dot"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.976471, 0.937255, 1)
+theme_override_font_sizes/font_size = 20
+text = "洁"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Bar" type="ProgressBar" parent="SafeArea/Layout/StatusPanel/Rows/StatRow2"]
+layout_mode = 2
+custom_minimum_size = Vector2(220, 22)
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/fill = SubResource("StyleBoxFlat_fill_cleanliness")
+show_percentage = false
+
+[node name="ValueBox" type="Control" parent="SafeArea/Layout/StatusPanel/Rows/StatRow2"]
+custom_minimum_size = Vector2(64, 28)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Value" type="Label" parent="SafeArea/Layout/StatusPanel/Rows/StatRow2/ValueBox"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"HintLabel"
+theme_override_colors/font_color = Color(0.356863, 0.290196, 0.247059, 1)
+text = "100"
+vertical_alignment = 1
+
+[node name="StatRow3" type="HBoxContainer" parent="SafeArea/Layout/StatusPanel/Rows"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 40)
+mouse_filter = 2
+theme_override_constants/separation = 16
+
+[node name="Dot" type="PanelContainer" parent="SafeArea/Layout/StatusPanel/Rows/StatRow3"]
+layout_mode = 2
+custom_minimum_size = Vector2(28, 28)
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_dot_mood")
+
+[node name="Char" type="Label" parent="SafeArea/Layout/StatusPanel/Rows/StatRow3/Dot"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.976471, 0.937255, 1)
+theme_override_font_sizes/font_size = 20
+text = "心"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Bar" type="ProgressBar" parent="SafeArea/Layout/StatusPanel/Rows/StatRow3"]
+layout_mode = 2
+custom_minimum_size = Vector2(220, 22)
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/fill = SubResource("StyleBoxFlat_fill_mood")
+show_percentage = false
+
+[node name="ValueBox" type="Control" parent="SafeArea/Layout/StatusPanel/Rows/StatRow3"]
+custom_minimum_size = Vector2(64, 28)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Value" type="Label" parent="SafeArea/Layout/StatusPanel/Rows/StatRow3/ValueBox"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"HintLabel"
+theme_override_colors/font_color = Color(0.356863, 0.290196, 0.247059, 1)
+text = "100"
+vertical_alignment = 1
+
+[node name="Toast" type="Panel" parent="SafeArea/Layout"]
+visible = false
+layout_mode = 1
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -360.0
+offset_top = 340.0 ; 修重叠：状态面板底(m.y+324) + 16，原为 m.y+32
+offset_right = 360.0
+offset_bottom = 404.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_toast_panel")
+
+[node name="Label" type="Label" parent="SafeArea/Layout/Toast"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"HintLabel"
+theme_override_colors/font_color = Color(0.356863, 0.290196, 0.247059, 1) ; INK，原 toast 字色
+text = "安静的小岛，正在等你。"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+; HatchPanel / HatchingPanel 用普通 Panel 而非 PanelContainer：
+; Container 在自身不可见时不排序子节点（实测子节点停在 0x0），而这两块面板初始隐藏，
+; 靠容器会让「破壳」状态首次出现时错位一帧。普通 Control 的 anchors/offsets 与可见性无关。
+[node name="HatchPanel" type="Panel" parent="SafeArea/Layout"]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -240.0
+offset_top = -300.0
+offset_right = 240.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_solid_panel")
+
+[node name="Content" type="Control" parent="SafeArea/Layout/HatchPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Caption" type="Label" parent="SafeArea/Layout/HatchPanel/Content"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 24.0
+offset_bottom = 56.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_type_variation = &"HintLabel"
+text = "孵化中"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Percent" type="Label" parent="SafeArea/Layout/HatchPanel/Content"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 74.0 ; 原基线 panel.y+134，FONT_COUNTDOWN ascent=60
+offset_bottom = 146.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_type_variation = &"CountdownLabel"
+text = "0%"
+horizontal_alignment = 1
+
+[node name="Action" type="Button" parent="SafeArea/Layout/HatchPanel/Content"]
+custom_minimum_size = Vector2(280, 88)
+layout_mode = 1
+offset_left = 100.0
+offset_top = 156.0
+offset_right = 380.0
+offset_bottom = 244.0
+text = "加速 -5s"
+
+[node name="HatchingPanel" type="Panel" parent="SafeArea/Layout"]
+visible = false
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -240.0
+offset_top = -300.0
+offset_right = 240.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_solid_panel")
+
+[node name="Content" type="Control" parent="SafeArea/Layout/HatchingPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Caption" type="Label" parent="SafeArea/Layout/HatchingPanel/Content"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 42.0
+offset_bottom = 74.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_type_variation = &"HintLabel"
+text = "正在破壳"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Glyph" type="Label" parent="SafeArea/Layout/HatchingPanel/Content"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 86.0 ; 原基线 panel.y+146，FONT_COUNTDOWN ascent=60
+offset_bottom = 163.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_type_variation = &"CountdownLabel"
+text = "✨"
+horizontal_alignment = 1
+
+[node name="Sub" type="Label" parent="SafeArea/Layout/HatchingPanel/Content"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 198.0
+offset_bottom = 230.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_type_variation = &"HintLabel"
+text = "新的伙伴马上就要出现了"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="FaceButton" type="Button" parent="SafeArea/Layout"]
+custom_minimum_size = Vector2(120, 120)
+layout_mode = 1
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -160.0
+offset_top = -160.0
+offset_right = -40.0
+offset_bottom = -40.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_fab")
+theme_override_styles/hover = SubResource("StyleBoxFlat_fab")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_fab")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_focus")
+icon = ExtResource("3_camera")
+icon_alignment = 1 ; Button.icon 默认 LEFT = 贴内容区左边缘；原文 draw_icon 画在按钮正中，实测图标中心因此左偏 27 画布单位

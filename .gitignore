@@ -2,9 +2,8 @@
 .godot/
 /android/
 face_api.cfg
-/build/face_*
-/build/pet_features_*
-/build/*.apk
+# build/ 全是本地产物（渲染帧、临时验证场景、测试固件、导出包），当前零跟踪文件，整目录忽略。
+/build/
 .omc/
 .claude/
 .DS_Store

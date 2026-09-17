@@ -1,6 +1,57 @@
-[gd_scene format=3 uid="uid://crluil1nm4hd4"]
+[gd_scene load_steps=12 format=3 uid="uid://crluil1nm4hd4"]
 
-[ext_resource type="Script" uid="uid://dgfuerfecoe1g" path="res://scripts/main_island.gd" id="1_main"]
+; 主岛是【静态场景树】—— 编辑器里打开本文件应当能看到全部节点。
+; 只有两类节点留在代码里动态创建（都是有生命周期的临时物，放进 .tscn 反而要额外管可见性）：
+;   · 按需弹出的换脸定制器（CanvasLayer layer=20）
+;   · 原生文件选择的 FileDialog 兜底（Window，不是 CanvasItem，不受锚点限制）
+;
+; 子节点顺序同时决定两件事，改动前请一并核对：
+;   1) _ready() 触发顺序（Godot 先子后父、同级按树序）
+;   2) 2D 绘制层级（后面的画在上面）
+; 因此 Background 必须在最前，UiLayer 必须在最后。
+;
+; UiLayer 必须是 CanvasLayer：Control::get_parent_anchorable_rect() 在父节点是 CanvasItem 时
+; 取父的 get_anchorable_rect()，而 CanvasItem 默认返回空 Rect2（Control 重写为自身矩形、Node2D
+; 不重写）—— 四个全屏 Control 直接挂在 MainIsland(Node2D) 下会量到 0x0 并被锚点系统覆盖 size。
+; CanvasLayer 不是 CanvasItem，会回退到视口矩形，锚点才成立。
 
-[node name="MainIsland" type="Node2D" unique_id=1256255717]
+[ext_resource type="Script" path="res://scripts/main_island.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://scenes/background.tscn" id="2_background"]
+[ext_resource type="Script" path="res://scripts/face_api.gd" id="3_api"]
+[ext_resource type="Script" path="res://scripts/face_compositor.gd" id="4_compositor"]
+[ext_resource type="Script" path="res://scripts/face_camera.gd" id="5_camera"]
+[ext_resource type="PackedScene" path="res://scenes/egg.tscn" id="6_egg"]
+[ext_resource type="PackedScene" path="res://scenes/pet.tscn" id="7_pet"]
+[ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="8_hud"]
+[ext_resource type="PackedScene" path="res://scenes/detail_panel.tscn" id="9_detail"]
+[ext_resource type="PackedScene" path="res://scenes/face_preview.tscn" id="10_preview"]
+[ext_resource type="PackedScene" path="res://scenes/face_dialogs.tscn" id="11_dialogs"]
+
+[node name="MainIsland" type="Node2D"]
 script = ExtResource("1_main")
+
+[node name="Background" parent="." instance=ExtResource("2_background")]
+
+[node name="FaceApi" type="Node" parent="."]
+script = ExtResource("3_api")
+
+[node name="FaceCompositor" type="Node" parent="."]
+script = ExtResource("4_compositor")
+
+[node name="FaceCamera" type="Node" parent="."]
+script = ExtResource("5_camera")
+
+[node name="Egg" parent="." instance=ExtResource("6_egg")]
+
+[node name="Pet" parent="." instance=ExtResource("7_pet")]
+
+[node name="UiLayer" type="CanvasLayer" parent="."]
+layer = 1
+
+[node name="Hud" parent="UiLayer" instance=ExtResource("8_hud")]
+
+[node name="DetailPanel" parent="UiLayer" instance=ExtResource("9_detail")]
+
+[node name="FacePreview" parent="UiLayer" instance=ExtResource("10_preview")]
+
+[node name="FaceDialogs" parent="UiLayer" instance=ExtResource("11_dialogs")]

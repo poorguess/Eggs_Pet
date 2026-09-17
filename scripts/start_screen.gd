@@ -1,160 +1,183 @@
-extends Node2D
+extends Control
 
-const EGG_TEXTURE := "res://assets/eggs_pics/Newegg.png"
+const ISLAND_SCENE := "res://scenes/main_island.tscn"
 
-var font: Font
-var egg: Sprite2D
+const BUTTON_SIZE := Vector2(320.0, 88.0)
+const DIALOG_SIZE := Vector2(640.0, 420.0)
+const DIALOG_TITLE_TOP := 56.0
+const DIALOG_BODY_BASELINE := 150.0
+const DIALOG_FROSTING_HEIGHT := 12.0
+
+@onready var _title: Label = $Title
+@onready var _tagline: Label = $Tagline
+@onready var _blurb: Label = $Blurb
+@onready var _egg: Sprite2D = $Egg
+@onready var _shadow: Polygon2D = $EggShadow
+@onready var _save_prompt: Label = $SavePrompt
+@onready var _fresh_prompt: Label = $FreshPrompt
+@onready var _secondary_button: Button = $SecondaryButton
+@onready var _primary_button: Button = $PrimaryButton
+@onready var _start_button: Button = $StartButton
+@onready var _footer: Label = $Footer
+@onready var _overlay: Control = $ConfirmOverlay
+@onready var _dialog: Panel = $ConfirmOverlay/DialogPanel
+@onready var _frosting: Panel = $ConfirmOverlay/DialogPanel/Frosting
+@onready var _dialog_title: Label = $ConfirmOverlay/DialogPanel/DialogTitle
+@onready var _dialog_body: Label = $ConfirmOverlay/DialogPanel/DialogBody
+@onready var _cancel_button: Button = $ConfirmOverlay/DialogPanel/CancelButton
+@onready var _confirm_button: Button = $ConfirmOverlay/DialogPanel/ConfirmButton
+
 var has_save := false
 var confirm_reset := false
-var press_target := ""
-var press := 0.0
-var press_tween: Tween
 var dialog_anim := 1.0
-var dialog_tween: Tween
-var float_clock := 0.0
+
+var _float_clock := 0.0
+var _dialog_tween: Tween
+
 
 func _ready() -> void:
-	font = ThemeDB.fallback_font
 	has_save = FileAccess.file_exists(SaveService.PATH)
-	egg = Sprite2D.new()
-	egg.texture = load(EGG_TEXTURE)
-	egg.scale = Vector2(0.28, 0.28)
-	add_child(egg)
-	queue_redraw()
+	_start_button.pressed.connect(_open_island)
+	_primary_button.pressed.connect(_open_island)
+	_secondary_button.pressed.connect(_show_reset_confirm)
+	_confirm_button.pressed.connect(_do_reset)
+	_cancel_button.pressed.connect(_cancel_reset)
+	resized.connect(_layout)
+	_apply_state()
+	_layout()
+
 
 func _exit_tree() -> void:
-	if press_tween:
-		press_tween.kill()
-	if dialog_tween:
-		dialog_tween.kill()
+	if _dialog_tween:
+		_dialog_tween.kill()
+
 
 func _process(delta: float) -> void:
-	float_clock += delta
-	var size := get_viewport().get_visible_rect().size
-	egg.position = Vector2(size.x * 0.5, size.y * 0.5 + sin(float_clock * PI) * 3.0)
-	queue_redraw()
+	_float_clock += delta
+	_place_egg()
+
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-		if event.pressed:
-			_press(event.position)
-		else:
-			_release(event.position)
-	if event is InputEventScreenTouch:
-		if event.pressed:
-			_press(event.position)
-		else:
-			_release(event.position)
 	if event is InputEventKey and event.pressed:
 		if event.keycode in [KEY_ENTER, KEY_SPACE] and not confirm_reset:
 			_open_island()
 		if event.keycode == KEY_ESCAPE and confirm_reset:
-			confirm_reset = false
-			egg.visible = true
-			queue_redraw()
+			_cancel_reset()
 
-func _press(point: Vector2) -> void:
-	var target := ""
-	if confirm_reset:
-		if _confirm_button(0).has_point(point):
-			target = "confirm_yes"
-		elif _confirm_button(1).has_point(point):
-			target = "confirm_no"
-	elif has_save:
-		if _primary_button_rect().has_point(point):
-			target = "start"
-		elif _secondary_button_rect().has_point(point):
-			target = "reset"
-	elif _start_button_rect().has_point(point):
-		target = "start"
-	if target == "":
-		return
-	press_target = target
-	if press_tween:
-		press_tween.kill()
-	press_tween = create_tween()
-	press_tween.tween_property(self, "press", 1.0, 0.12)
 
-func _release(point: Vector2) -> void:
-	var target := press_target
-	press_target = ""
-	if press_tween:
-		press_tween.kill()
-	press_tween = create_tween()
-	press_tween.tween_property(self, "press", 0.0, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	if target == "" or not _hit(target, point):
-		return
-	match target:
-		"start":
-			_open_island()
-		"reset":
-			_show_reset_confirm()
-		"confirm_yes":
-			_do_reset()
-		"confirm_no":
-			confirm_reset = false
-			egg.visible = true
-			queue_redraw()
+func _layout() -> void:
+	var canvas := size
+	var m := _safe_margins()
 
-func _hit(target: String, point: Vector2) -> bool:
-	match target:
-		"start":
-			if confirm_reset:
-				return false
-			return _primary_button_rect().has_point(point) if has_save else _start_button_rect().has_point(point)
-		"reset":
-			return has_save and not confirm_reset and _secondary_button_rect().has_point(point)
-		"confirm_yes":
-			return confirm_reset and _confirm_button(0).has_point(point)
-		"confirm_no":
-			return confirm_reset and _confirm_button(1).has_point(point)
-	return false
+	var header := canvas.y * 0.16
+	_place_baseline(_title, header)
+	_place_baseline(_tagline, header + 52.0)
+	_place_baseline(_blurb, header + 96.0)
+
+	_place_egg()
+
+	var row_y := canvas.y - m.w - 96.0 - 88.0
+	_secondary_button.position = Vector2(canvas.x * 0.5 - 16.0 - BUTTON_SIZE.x, row_y)
+	_primary_button.position = Vector2(canvas.x * 0.5 + 16.0, row_y)
+	_start_button.position = Vector2(canvas.x * 0.5 - BUTTON_SIZE.x * 0.5, row_y)
+	for button: Button in [_secondary_button, _primary_button, _start_button]:
+		button.size = BUTTON_SIZE
+	_place_baseline(_save_prompt, row_y - 32.0)
+	_place_baseline(_fresh_prompt, row_y - 32.0)
+	_place_baseline(_footer, canvas.y - m.w - 40.0)
+
+	_dialog.position = (canvas - DIALOG_SIZE) * 0.5
+	_dialog.size = DIALOG_SIZE
+	_dialog.pivot_offset = DIALOG_SIZE * 0.5
+	_frosting.size = Vector2(DIALOG_SIZE.x, DIALOG_FROSTING_HEIGHT)
+	_place_baseline(_dialog_title, DIALOG_TITLE_TOP + _ascent(_dialog_title))
+	_place_baseline(_dialog_body, DIALOG_BODY_BASELINE)
+	# 弹窗正文是两行：把矩形下边补到能容纳第二行，避免编辑器里看起来被裁切。
+	_dialog_body.offset_bottom += _line_step(_dialog_body)
+	var dialog_button_y := DIALOG_SIZE.y - 40.0 - 88.0
+	_cancel_button.position = Vector2(48.0, dialog_button_y)
+	_confirm_button.position = Vector2(DIALOG_SIZE.x - 48.0 - 260.0, dialog_button_y)
+	for button: Button in [_cancel_button, _confirm_button]:
+		button.size = Vector2(260.0, 88.0)
+
+	_apply_dialog_anim()
+
+
+# 原 _draw() 用 draw_string 的 baseline 定位，Control 需要换算成矩形上下边。
+func _place_baseline(label: Label, baseline_y: float) -> void:
+	var font := label.get_theme_font("font")
+	var font_size := label.get_theme_font_size("font_size")
+	label.offset_top = baseline_y - font.get_ascent(font_size)
+	label.offset_bottom = baseline_y + font.get_descent(font_size)
+
+
+func _ascent(label: Label) -> float:
+	var font := label.get_theme_font("font")
+	return font.get_ascent(label.get_theme_font_size("font_size"))
+
+
+# 一行占的高度（含 line_spacing），与原 draw_multiline_string 的换行步进一致。
+func _line_step(label: Label) -> float:
+	var font := label.get_theme_font("font")
+	return font.get_height(label.get_theme_font_size("font_size")) + label.get_theme_constant("line_spacing")
+
+
+func _place_egg() -> void:
+	var center := Vector2(size.x * 0.5, size.y * 0.5 + sin(_float_clock * PI) * 3.0)
+	_egg.position = center
+	_shadow.position = Vector2(size.x * 0.5, center.y + _egg.texture.get_height() * _egg.scale.y * 0.5 + 20.0)
+
+
+func _apply_state() -> void:
+	_start_button.visible = not has_save
+	_primary_button.visible = has_save
+	_secondary_button.visible = has_save
+	_save_prompt.visible = has_save
+	_fresh_prompt.visible = not has_save
+	_overlay.visible = confirm_reset
+	_egg.visible = not confirm_reset
+
+
+func _apply_dialog_anim() -> void:
+	var s := 0.8 + 0.2 * dialog_anim
+	_dialog.scale = Vector2(s, s)
+	_dialog.modulate.a = clampf(dialog_anim, 0.0, 1.0)
+
 
 func _open_island() -> void:
-	get_tree().change_scene_to_file("res://scenes/main_island.tscn")
+	get_tree().change_scene_to_file(ISLAND_SCENE)
+
 
 func _show_reset_confirm() -> void:
 	confirm_reset = true
-	egg.visible = false
-	if dialog_tween:
-		dialog_tween.kill()
+	if _dialog_tween:
+		_dialog_tween.kill()
 	dialog_anim = 0.0
-	dialog_tween = create_tween()
-	dialog_tween.tween_property(self, "dialog_anim", 1.0, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	queue_redraw()
+	_dialog_tween = create_tween()
+	_dialog_tween.tween_method(_set_dialog_anim, 0.0, 1.0, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_apply_state()
+
+
+func _cancel_reset() -> void:
+	confirm_reset = false
+	_apply_state()
+
 
 func _do_reset() -> void:
 	SaveService.reset()
 	has_save = false
 	confirm_reset = false
-	egg.visible = true
-	queue_redraw()
+	_apply_state()
 
-func _start_button_rect() -> Rect2:
-	var size := get_viewport().get_visible_rect().size
-	return Rect2(size.x * 0.5 - 160.0, size.y - _margins().w - 96.0 - 88.0, 320.0, 88.0)
 
-func _primary_button_rect() -> Rect2:
-	var size := get_viewport().get_visible_rect().size
-	return Rect2(size.x * 0.5 + 16.0, size.y - _margins().w - 96.0 - 88.0, 320.0, 88.0)
+func _set_dialog_anim(value: float) -> void:
+	dialog_anim = value
+	_apply_dialog_anim()
 
-func _secondary_button_rect() -> Rect2:
-	var size := get_viewport().get_visible_rect().size
-	return Rect2(size.x * 0.5 - 16.0 - 320.0, size.y - _margins().w - 96.0 - 88.0, 320.0, 88.0)
 
-func _confirm_panel_rect() -> Rect2:
-	var size := get_viewport().get_visible_rect().size
-	return Rect2((size.x - 640.0) * 0.5, (size.y - 420.0) * 0.5, 640.0, 420.0)
-
-func _confirm_button(index: int) -> Rect2:
-	var panel := _confirm_panel_rect()
-	var y := panel.end.y - 40.0 - 88.0
-	if index == 0:
-		return Rect2(panel.end.x - 48.0 - 260.0, y, 260.0, 88.0)
-	return Rect2(panel.position.x + 48.0, y, 260.0, 88.0)
-
-func _margins() -> Vector4:
-	var canvas := get_viewport().get_visible_rect().size
+# Vector4(left, top, right, bottom)，canvas 单位，每边至少 16。
+func _safe_margins() -> Vector4:
+	var canvas := size
 	var window := Vector2(DisplayServer.window_get_size())
 	if window.x <= 0.0 or window.y <= 0.0:
 		return Vector4(16, 16, 16, 16)
@@ -166,54 +189,3 @@ func _margins() -> Vector4:
 		maxf(16.0, area.position.y * sy),
 		maxf(16.0, (window.x - area.end.x) * sx),
 		maxf(16.0, (window.y - area.end.y) * sy))
-
-func _draw() -> void:
-	var size := get_viewport().get_visible_rect().size
-	var m := _margins()
-	draw_rect(Rect2(Vector2.ZERO, size), UiTheme.CREAM)
-
-	draw_string(font, Vector2(0, size.y * 0.16), "蛋岛", HORIZONTAL_ALIGNMENT_CENTER, size.x, 96, UiTheme.INK)
-	draw_string(font, Vector2(0, size.y * 0.16 + 52.0), "一颗蛋，正在等你", HORIZONTAL_ALIGNMENT_CENTER, size.x, UiTheme.FONT_BODY, UiTheme.INK)
-	draw_string(font, Vector2(0, size.y * 0.16 + 96.0), "在安静的小岛上，慢慢照顾它长大。", HORIZONTAL_ALIGNMENT_CENTER, size.x, UiTheme.FONT_HINT, UiTheme.INK_SOFT)
-
-	var egg_bottom := egg.position.y + egg.texture.get_height() * egg.scale.y * 0.5
-	_draw_shadow_ellipse(Vector2(size.x * 0.5, egg_bottom + 20.0), Vector2(150, 18), Color(UiTheme.INK, 0.10))
-
-	if has_save:
-		var start_press := press if press_target == "start" else 0.0
-		var reset_press := press if press_target == "reset" else 0.0
-		draw_string(font, Vector2(0, _primary_button_rect().position.y - 32.0), "欢迎回来，它一直在等你。", HORIZONTAL_ALIGNMENT_CENTER, size.x, UiTheme.FONT_HINT, UiTheme.INK_SOFT)
-		UiTheme.draw_secondary_button(self, _secondary_button_rect(), "重新开始", font, reset_press)
-		UiTheme.draw_candy_button(self, _primary_button_rect(), "继续游戏", font, UiTheme.CANDY_PINK, UiTheme.CANDY_PINK_DARK, start_press)
-	else:
-		var button := _start_button_rect()
-		draw_string(font, Vector2(0, button.position.y - 32.0), "准备好了吗？", HORIZONTAL_ALIGNMENT_CENTER, size.x, UiTheme.FONT_HINT, UiTheme.INK_SOFT)
-		UiTheme.draw_candy_button(self, button, "开始", font, UiTheme.CANDY_PINK, UiTheme.CANDY_PINK_DARK, press if press_target == "start" else 0.0)
-	draw_string(font, Vector2(0, size.y - m.w - 40.0), "横屏体验 · 轻柔照护 · 随时回来", HORIZONTAL_ALIGNMENT_CENTER, size.x, UiTheme.FONT_HINT, UiTheme.INK_SOFT)
-
-	if confirm_reset:
-		_draw_reset_confirm(size)
-
-func _draw_reset_confirm(size: Vector2) -> void:
-	draw_rect(Rect2(Vector2.ZERO, size), UiTheme.DIM)
-	var panel := _confirm_panel_rect()
-	var s := 0.8 + 0.2 * dialog_anim
-	var a := clampf(dialog_anim, 0.0, 1.0)
-	var center := panel.get_center()
-	draw_set_transform(center * (1.0 - s), 0.0, Vector2(s, s))
-	UiTheme.draw_panel(self, panel, UiTheme.CREAM, UiTheme.RADIUS_PANEL, a)
-	UiTheme.draw_frosting(self, panel, UiTheme.DANGER, a)
-	draw_string(font, panel.position + Vector2(48, 56 + font.get_ascent(UiTheme.FONT_TITLE)), "重新开始？", HORIZONTAL_ALIGNMENT_LEFT, -1, UiTheme.FONT_TITLE, UiTheme.fade(UiTheme.INK, a))
-	draw_multiline_string(font, panel.position + Vector2(48, 150), "会清空当前的蛋、孵化进度和照片，\n回到第一天重新来过。", HORIZONTAL_ALIGNMENT_LEFT, panel.size.x - 96, UiTheme.FONT_HINT, 8, UiTheme.fade(UiTheme.INK_SOFT, a))
-	var yes_press := press if press_target == "confirm_yes" else 0.0
-	var no_press := press if press_target == "confirm_no" else 0.0
-	UiTheme.draw_secondary_button(self, _confirm_button(1), "取消", font, no_press, a)
-	UiTheme.draw_candy_button(self, _confirm_button(0), "确定重置", font, UiTheme.DANGER, UiTheme.DANGER.darkened(0.15), yes_press, a)
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-
-func _draw_shadow_ellipse(center: Vector2, radius: Vector2, color: Color) -> void:
-	var points := PackedVector2Array()
-	for i in range(40):
-		var angle := TAU * float(i) / 40.0
-		points.append(center + Vector2(cos(angle) * radius.x, sin(angle) * radius.y))
-	draw_colored_polygon(points, color)

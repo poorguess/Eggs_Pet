@@ -136,9 +136,43 @@ Write-Host "device: $(if ($deviceModel) { $deviceModel } else { 'unknown' })"
 # --- 导出 ---
 New-Item -ItemType Directory -Force -Path "build" | Out-Null
 Write-Host "exporting $PresetName -> $ApkPath ..."
-& $Godot --headless --path . --export-debug $PresetName $ApkPath
-if ($LASTEXITCODE -ne 0 -or -not (Test-Path $ApkPath)) {
-    Fail "导出失败（exit=$LASTEXITCODE）。" "完整日志见上方 Godot 输出；常见问题：SDK 路径未在编辑器设置中保存、模板版本不匹配、Gradle 首次联网下载被中断。"
+Write-Host "（导出日志实时写入 build\export_stderr.log，首次 Gradle 构建需联网下载，可能数分钟无输出）"
+$exportStart = Get-Date
+$outLog = Join-Path $PSScriptRoot "build\export_stdout.log"
+$errLog = Join-Path $PSScriptRoot "build\export_stderr.log"
+# 不用 & 同步等待：本机 Godot headless 导出完成后进程偶尔挂起不退（插件清理线程），
+# 用 Start-Process + 超时等待，APK 已更新则视为成功并结束残留进程。
+$proc = Start-Process -FilePath $Godot -WorkingDirectory $PSScriptRoot -NoNewWindow -PassThru `
+    -RedirectStandardOutput $outLog -RedirectStandardError $errLog `
+    -ArgumentList "--headless", "--path", ".", "--export-debug", $PresetName, $ApkPath
+# 轮询等待：进程退出则立即继续；APK 已更新且体积 10 秒稳定但进程未退（已知挂起）则杀掉继续
+$deadline = (Get-Date).AddMinutes(10)
+$lastSize = -1
+$stableRounds = 0
+while (-not $proc.HasExited -and (Get-Date) -lt $deadline) {
+    Start-Sleep -Seconds 5
+    if ((Test-Path $ApkPath) -and (Get-Item $ApkPath).LastWriteTime -gt $exportStart) {
+        $size = (Get-Item $ApkPath).Length
+        if ($size -gt 0 -and $size -eq $lastSize) {
+            $stableRounds++
+        } else {
+            $stableRounds = 0
+            $lastSize = $size
+        }
+        if ($stableRounds -ge 2) {
+            Write-Host "APK 已生成，引擎进程退出挂起（已知问题），结束残留进程继续安装。" -ForegroundColor Yellow
+            Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+            break
+        }
+    }
+}
+if (-not $proc.HasExited -and $stableRounds -lt 2) {
+    Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+    Fail "导出超时（10 分钟）。" "日志：$errLog"
+}
+if (-not (Test-Path $ApkPath) -or (Get-Item $ApkPath).LastWriteTime -lt $exportStart) {
+    Write-Host (Get-Content $errLog -Tail 30 -ErrorAction SilentlyContinue | Out-String)
+    Fail "导出失败。" "完整日志见上方与 $errLog；常见问题：SDK 路径未在编辑器设置中保存、模板版本不匹配、Gradle 首次联网下载被中断。"
 }
 
 # --- 安装 ---
