@@ -1,0 +1,624 @@
+[gd_scene format=3 uid="uid://7r3q0n1gacha"]
+
+[ext_resource type="Script" uid="uid://brym6ht1qsuy6" path="res://scripts/gacha_egg_scene.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://dni1sl38osl3" path="res://assets/gacha_egg/middle.png" id="2_middle"]
+[ext_resource type="Texture2D" uid="uid://eufnw2sl5ixn" path="res://assets/gacha_egg/egg_03.png" id="3_egg03"]
+[ext_resource type="Texture2D" uid="uid://h4cm5yt54pym" path="res://assets/gacha_egg/egg_02.png" id="4_egg02"]
+[ext_resource type="Texture2D" uid="uid://3ehy4l17ghsh" path="res://assets/gacha_egg/egg_01.png" id="5_egg01"]
+[ext_resource type="Texture2D" uid="uid://clhfbrw5efijt" path="res://assets/gacha_egg/machine.png" id="6_machine"]
+[ext_resource type="Texture2D" uid="uid://ts0frfab0yid" path="res://assets/gacha_egg/button.png" id="7_button"]
+[ext_resource type="Texture2D" uid="uid://c40bolbvnrewk" path="res://assets/gacha_egg/mubu.png" id="8_mubu"]
+[ext_resource type="Texture2D" uid="uid://cxjt7qnpsvu7o" path="res://assets/gacha_egg/back.png" id="9_back"]
+[ext_resource type="Texture2D" uid="uid://xncwqymqto5q" path="res://assets/gacha_egg/GetThings.png" id="10_get_things"]
+[ext_resource type="Texture2D" uid="uid://bk4tf2vvk5bqn" path="res://assets/gacha_egg/GetThingsText_Cartoon.png" id="11_get_things_text"]
+[ext_resource type="Shader" uid="uid://dn5pdqhvlodyo" path="res://assets/shaders/reward_dim_overlay.gdshader" id="12_reward_dim_shader"]
+[ext_resource type="Shader" uid="uid://c1h8ukps4bjkn" path="res://assets/shaders/reward_panel_wobble.gdshader" id="13_reward_panel_shader"]
+[ext_resource type="Shader" uid="uid://cpgs3etckw33h" path="res://assets/shaders/reward_text_shine.gdshader" id="14_reward_text_shader"]
+[ext_resource type="Texture2D" uid="uid://bqg28sbcchdok" path="res://assets/gacha_egg/icons/bag_icon.png" id="15_bag_icon"]
+[ext_resource type="Texture2D" uid="uid://b61nghv7tfdv2" path="res://assets/gacha_egg/icons/bx_icon.png" id="16_bx_icon"]
+[ext_resource type="Texture2D" uid="uid://5bcuxvw3en70" path="res://assets/gacha_egg/icons/chat_icon.png" id="17_chat_icon"]
+[ext_resource type="Texture2D" uid="uid://pk2gakug37j2" path="res://assets/gacha_egg/icons/egg_icon.png" id="18_egg_icon"]
+[ext_resource type="Texture2D" uid="uid://cshqn7w73a6gw" path="res://assets/gacha_egg/icons/qd_icon.png" id="19_qd_icon"]
+[ext_resource type="Texture2D" uid="uid://dl0j8n7d3m5ug" path="res://assets/gacha_egg/icons/sz_icon.png" id="20_sz_icon"]
+[ext_resource type="Texture2D" uid="uid://xnimu1jvwciq" path="res://assets/gacha_egg/icons/tj_icon.png" id="21_tj_icon"]
+
+[sub_resource type="Animation" id="Animation_egg_idle_reset"]
+length = 0.001
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Egg03:position:x")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0)
+}
+tracks/1/type = "bezier"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Egg03:position:y")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0)
+}
+tracks/2/type = "bezier"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Egg03:rotation")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0)
+}
+tracks/3/type = "bezier"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Egg02:position:x")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0)
+}
+tracks/4/type = "bezier"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("Egg02:position:y")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0)
+}
+tracks/5/type = "bezier"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("Egg02:rotation")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0)
+}
+tracks/6/type = "bezier"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("Egg01:position:x")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0)
+}
+tracks/7/type = "bezier"
+tracks/7/imported = false
+tracks/7/enabled = true
+tracks/7/path = NodePath("Egg01:position:y")
+tracks/7/interp = 1
+tracks/7/loop_wrap = true
+tracks/7/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0)
+}
+tracks/8/type = "bezier"
+tracks/8/imported = false
+tracks/8/enabled = true
+tracks/8/path = NodePath("Egg01:rotation")
+tracks/8/interp = 1
+tracks/8/loop_wrap = true
+tracks/8/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0)
+}
+
+[sub_resource type="Animation" id="Animation_egg_idle"]
+resource_name = "egg_idle"
+length = 4.0
+loop_mode = 1
+step = 0.05
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Egg03:position:x")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0, 0, 0, 0, 0),
+"points": PackedFloat32Array(0, -0.4, 0, 0.4, 0, 7, -0.4, 0, 0.4, 0, -4, -0.4, 0, 0.4, 0, 5, -0.4, 0, 0.4, 0, 0, -0.4, 0, 0.4, 0),
+"times": PackedFloat32Array(0, 1, 2, 3, 4)
+}
+tracks/1/type = "bezier"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Egg03:position:y")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"handle_modes": PackedInt32Array(0, 0, 0, 0, 0),
+"points": PackedFloat32Array(0, -0.4, 0, 0.4, 0, -8, -0.4, 0, 0.4, 0, 5, -0.4, 0, 0.4, 0, -3, -0.4, 0, 0.4, 0, 0, -0.4, 0, 0.4, 0),
+"times": PackedFloat32Array(0, 1, 2, 3, 4)
+}
+tracks/2/type = "bezier"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Egg03:rotation")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"handle_modes": PackedInt32Array(0, 0, 0, 0, 0),
+"points": PackedFloat32Array(0, -0.4, 0, 0.4, 0, -0.014, -0.4, 0, 0.4, 0, 0.012, -0.4, 0, 0.4, 0, -0.008, -0.4, 0, 0.4, 0, 0, -0.4, 0, 0.4, 0),
+"times": PackedFloat32Array(0, 1, 2, 3, 4)
+}
+tracks/3/type = "bezier"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Egg02:position:x")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"handle_modes": PackedInt32Array(0, 0, 0, 0, 0),
+"points": PackedFloat32Array(0, -0.4, 0, 0.4, 0, -10, -0.4, 0, 0.4, 0, 6, -0.4, 0, 0.4, 0, -5, -0.4, 0, 0.4, 0, 0, -0.4, 0, 0.4, 0),
+"times": PackedFloat32Array(0, 0.9, 2, 3.05, 4)
+}
+tracks/4/type = "bezier"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("Egg02:position:y")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"handle_modes": PackedInt32Array(0, 0, 0, 0, 0),
+"points": PackedFloat32Array(0, -0.4, 0, 0.4, 0, 7, -0.4, 0, 0.4, 0, -10, -0.4, 0, 0.4, 0, 4, -0.4, 0, 0.4, 0, 0, -0.4, 0, 0.4, 0),
+"times": PackedFloat32Array(0, 0.9, 2, 3.05, 4)
+}
+tracks/5/type = "bezier"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("Egg02:rotation")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"handle_modes": PackedInt32Array(0, 0, 0, 0, 0),
+"points": PackedFloat32Array(0, -0.4, 0, 0.4, 0, 0.018, -0.4, 0, 0.4, 0, -0.018, -0.4, 0, 0.4, 0, 0.012, -0.4, 0, 0.4, 0, 0, -0.4, 0, 0.4, 0),
+"times": PackedFloat32Array(0, 0.9, 2, 3.05, 4)
+}
+tracks/6/type = "bezier"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("Egg01:position:x")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"handle_modes": PackedInt32Array(0, 0, 0, 0, 0),
+"points": PackedFloat32Array(0, -0.4, 0, 0.4, 0, 8, -0.4, 0, 0.4, 0, -8, -0.4, 0, 0.4, 0, 4, -0.4, 0, 0.4, 0, 0, -0.4, 0, 0.4, 0),
+"times": PackedFloat32Array(0, 0.8, 1.95, 3, 4)
+}
+tracks/7/type = "bezier"
+tracks/7/imported = false
+tracks/7/enabled = true
+tracks/7/path = NodePath("Egg01:position:y")
+tracks/7/interp = 1
+tracks/7/loop_wrap = true
+tracks/7/keys = {
+"handle_modes": PackedInt32Array(0, 0, 0, 0, 0),
+"points": PackedFloat32Array(0, -0.4, 0, 0.4, 0, -12, -0.4, 0, 0.4, 0, 4, -0.4, 0, 0.4, 0, -8, -0.4, 0, 0.4, 0, 0, -0.4, 0, 0.4, 0),
+"times": PackedFloat32Array(0, 0.8, 1.95, 3, 4)
+}
+tracks/8/type = "bezier"
+tracks/8/imported = false
+tracks/8/enabled = true
+tracks/8/path = NodePath("Egg01:rotation")
+tracks/8/interp = 1
+tracks/8/loop_wrap = true
+tracks/8/keys = {
+"handle_modes": PackedInt32Array(0, 0, 0, 0, 0),
+"points": PackedFloat32Array(0, -0.4, 0, 0.4, 0, -0.024, -0.4, 0, 0.4, 0, 0.02, -0.4, 0, 0.4, 0, -0.014, -0.4, 0, 0.4, 0, 0, -0.4, 0, 0.4, 0),
+"times": PackedFloat32Array(0, 0.8, 1.95, 3, 4)
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_egg_idle"]
+_data = {
+&"RESET": SubResource("Animation_egg_idle_reset"),
+&"egg_idle": SubResource("Animation_egg_idle")
+}
+
+[sub_resource type="Shader" id="Shader_gacha_flash"]
+code = "shader_type canvas_item;
+
+uniform float progress : hint_range(0.0, 1.0) = 0.0;
+uniform float strength : hint_range(0.0, 1.4) = 0.0;
+uniform vec2 origin = vec2(0.5, 0.66);
+uniform float aspect = 0.5625;
+
+void fragment() {
+	vec2 delta = UV - origin;
+	delta.x *= aspect;
+	float dist = length(delta);
+	float angle = atan(delta.y, delta.x);
+
+	float birth = smoothstep(0.0, 0.28, progress);
+	float core_radius = mix(0.012, 0.18, birth);
+	float core = 1.0 - smoothstep(core_radius, core_radius + 0.085, dist);
+
+	float burst_life = 1.0 - smoothstep(0.30, 0.58, progress);
+	float burst = (1.0 - smoothstep(0.08, 0.42, dist)) * smoothstep(0.10, 0.32, progress) * burst_life;
+
+	float ring_progress = smoothstep(0.22, 1.0, progress);
+	float ring_radius = mix(0.05, 1.26, ring_progress);
+	float ring_width = mix(0.105, 0.028, ring_progress);
+	float ring = 1.0 - smoothstep(ring_width, ring_width + 0.04, abs(dist - ring_radius));
+	float ring_fade = 1.0 - smoothstep(0.72, 1.0, progress);
+
+	float rays = pow(abs(cos(angle * 4.0)), 18.0) * (1.0 - smoothstep(0.04, 0.72, dist));
+	float ray_flash = rays * smoothstep(0.12, 0.34, progress) * (1.0 - smoothstep(0.34, 0.62, progress));
+
+	float alpha = strength * (core * 0.95 * (1.0 - ring_progress * 0.65) + burst * 0.55 + ring * 0.52 * ring_fade + ray_flash * 0.38);
+	alpha = clamp(alpha, 0.0, 0.92);
+	COLOR = vec4(vec3(1.0), alpha);
+}"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_gacha_flash"]
+shader = SubResource("Shader_gacha_flash")
+shader_parameter/progress = 0.0
+shader_parameter/strength = 0.0
+shader_parameter/origin = Vector2(0.5, 0.66)
+shader_parameter/aspect = 0.5625
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_reward_dim"]
+shader = ExtResource("12_reward_dim_shader")
+shader_parameter/dim_strength = 0.68
+shader_parameter/grayscale_strength = 0.72
+shader_parameter/focus_center = Vector2(0.5, 0.47)
+shader_parameter/focus_radius = 0.36
+shader_parameter/vignette_strength = 0.28
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_reward_panel"]
+shader = ExtResource("13_reward_panel_shader")
+shader_parameter/time_offset = 0.0
+shader_parameter/wobble_strength = 0.0
+shader_parameter/entrance_squash = 0.0
+shader_parameter/glow_strength = 0.35
+shader_parameter/chromatic_strength = 0.0
+shader_parameter/sample_uv_min = Vector2(0, 0.31)
+shader_parameter/sample_uv_max = Vector2(1, 0.64)
+shader_parameter/rim_color = Color(1, 0.42, 0.95, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_reward_text"]
+shader = ExtResource("14_reward_text_shader")
+shader_parameter/shine_progress = 0.0
+shader_parameter/pulse_strength = 0.0
+shader_parameter/glow_strength = 0.35
+
+[node name="GachaEggScene" type="Control" unique_id=1803327356]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_script")
+
+[node name="BackLayer" type="Control" parent="." unique_id=422118951]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Back" type="TextureRect" parent="BackLayer" unique_id=1340474429]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("9_back")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="MiddleLayer" type="Control" parent="." unique_id=284484040]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Middle" type="TextureRect" parent="MiddleLayer" unique_id=67519923]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_middle")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="EggMachine" type="Control" parent="." unique_id=156729753]
+unique_name_in_owner = true
+anchors_preset = 0
+offset_left = -731.0
+offset_top = -32.99994
+offset_right = 1829.0
+offset_bottom = 1887.0
+scale = Vector2(0.67999953, 0.67999953)
+pivot_offset = Vector2(1280, 1640)
+mouse_filter = 2
+
+[node name="Egg03" type="TextureRect" parent="EggMachine" unique_id=128016748]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(1461.5, 891.5)
+mouse_filter = 2
+texture = ExtResource("3_egg03")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Egg02" type="TextureRect" parent="EggMachine" unique_id=1057831450]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(1063, 899)
+mouse_filter = 2
+texture = ExtResource("4_egg02")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Egg01" type="TextureRect" parent="EggMachine" unique_id=102441149]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(1271, 865.5)
+mouse_filter = 2
+texture = ExtResource("5_egg01")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Machine" type="TextureRect" parent="EggMachine" unique_id=1513216460]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("6_machine")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Button" type="TextureRect" parent="EggMachine" unique_id=1135874759]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(1276.5, 1252)
+mouse_filter = 2
+texture = ExtResource("7_button")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ButtonHitArea" type="Control" parent="EggMachine" unique_id=1385209457]
+unique_name_in_owner = true
+anchors_preset = 0
+offset_left = 1096.0
+offset_top = 1087.0
+offset_right = 1456.0
+offset_bottom = 1417.0
+
+[node name="EggIdleAnimation" type="AnimationPlayer" parent="EggMachine" unique_id=1192382287]
+unique_name_in_owner = true
+libraries/ = SubResource("AnimationLibrary_egg_idle")
+
+[node name="ForegroundLayer" type="Control" parent="." unique_id=2071058911]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Mubu" type="TextureRect" parent="ForegroundLayer" unique_id=77788427]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("8_mubu")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="IconLayer" type="Control" parent="." unique_id=1251228206]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="BagIcon" type="TextureRect" parent="IconLayer" unique_id=487329258]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 1556.0
+offset_right = 202.0
+offset_bottom = 1726.0
+mouse_filter = 2
+texture = ExtResource("15_bag_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BxIcon" type="TextureRect" parent="IconLayer" unique_id=232324551]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 1736.0
+offset_right = 202.0
+offset_bottom = 1906.0
+mouse_filter = 2
+texture = ExtResource("16_bx_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ChatIcon" type="TextureRect" parent="IconLayer" unique_id=626536028]
+layout_mode = 0
+offset_left = 899.0
+offset_top = 1345.0
+offset_right = 1069.0
+offset_bottom = 1515.0
+mouse_filter = 2
+texture = ExtResource("17_chat_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SzIcon" type="TextureRect" parent="IconLayer" unique_id=1931968212]
+layout_mode = 0
+offset_left = 920.0
+offset_top = 48.0
+offset_right = 1040.0
+offset_bottom = 168.0
+mouse_filter = 2
+texture = ExtResource("20_sz_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TjIcon" type="TextureRect" parent="IconLayer" unique_id=2116580838]
+layout_mode = 0
+offset_left = 35.0
+offset_top = 1365.0
+offset_right = 205.0
+offset_bottom = 1535.0
+mouse_filter = 2
+texture = ExtResource("21_tj_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GachaFlashOverlay" type="ColorRect" parent="." unique_id=1770135657]
+unique_name_in_owner = true
+visible = false
+material = SubResource("ShaderMaterial_gacha_flash")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 0)
+
+[node name="RewardDimOverlay" type="ColorRect" parent="." unique_id=2033236881]
+unique_name_in_owner = true
+visible = false
+material = SubResource("ShaderMaterial_reward_dim")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
+[node name="RewardUI" type="Control" parent="." unique_id=1599458017]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="GetThingsPanel" type="TextureRect" parent="RewardUI" unique_id=1718738943]
+unique_name_in_owner = true
+material = SubResource("ShaderMaterial_reward_panel")
+layout_mode = 0
+offset_left = -49.000122
+offset_top = 630.99994
+offset_right = 1126.0399
+offset_bottom = 1264.12
+scale = Vector2(4.1599975, 4.1599975)
+pivot_offset = Vector2(587.52, 316.56)
+mouse_filter = 2
+texture = ExtResource("10_get_things")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GetThingsText" type="TextureRect" parent="RewardUI" unique_id=768711511]
+unique_name_in_owner = true
+material = SubResource("ShaderMaterial_reward_text")
+layout_mode = 0
+offset_left = -9.0
+offset_top = 617.0
+offset_right = 560.89
+offset_bottom = 822.45
+pivot_offset = Vector2(284.945, 102.725)
+mouse_filter = 2
+texture = ExtResource("11_get_things_text")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="RewardEggIcon" type="TextureRect" parent="RewardUI" unique_id=631873616]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 408.0
+offset_top = 792.0
+offset_right = 680.0
+offset_bottom = 1064.0
+pivot_offset = Vector2(136, 136)
+mouse_filter = 2
+texture = ExtResource("18_egg_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="QdIcon" type="TextureRect" parent="RewardUI" unique_id=2120328129]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 376.0
+offset_top = 1048.0
+offset_right = 706.0
+offset_bottom = 1188.0
+mouse_filter = 0
+texture = ExtResource("19_qd_icon")
+expand_mode = 1
+stretch_mode = 5

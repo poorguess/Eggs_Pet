@@ -1,133 +1,129 @@
-[gd_resource type="Theme" load_steps=10 format=3]
-
-; 「糖果岛」设计 token 的 Godot 资源化落地。
-; token 唯一真源是 scripts/ui_theme.gd：.tres 是静态数据，无法引用 UiTheme 常量，
-; 因此下面每个字面值后面都用注释标注它对应的常量名。改调色板请先改 ui_theme.gd，再同步本文件。
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
-bg_color = Color(1, 0.976471, 0.937255, 1) ; CREAM #FFF9EF
-corner_radius_top_left = 32 ; RADIUS_PANEL
-corner_radius_top_right = 32 ; RADIUS_PANEL
-corner_radius_bottom_right = 32 ; RADIUS_PANEL
-corner_radius_bottom_left = 32 ; RADIUS_PANEL
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_soft_panel"]
-bg_color = Color(0.960784, 0.913725, 0.835294, 1) ; CREAM_DARK #F5E9D5
-corner_radius_top_left = 32 ; RADIUS_PANEL
-corner_radius_top_right = 32 ; RADIUS_PANEL
-corner_radius_bottom_right = 32 ; RADIUS_PANEL
-corner_radius_bottom_left = 32 ; RADIUS_PANEL
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_normal"]
-content_margin_left = 40 ; 水平留白，量级对齐 draw_candy_button 的图标位 44px
-content_margin_top = 23 ; 上下 23*2 + FONT_BODY(30) 行高 42 = 88px，对齐设计里 280x88 的糖果按钮
-content_margin_right = 40 ; 同 left
-content_margin_bottom = 23 ; 同 top
-bg_color = Color(1, 0.419608, 0.541176, 1) ; CANDY_PINK #FF6B8A
-border_width_bottom = 4 ; BUTTON_EDGE
-border_color = Color(0.882353, 0.298039, 0.427451, 1) ; CANDY_PINK_DARK #E14C6D
-corner_radius_top_left = 999 ; 圆角=高度/2，StyleBox 拿不到高度故用大圆角近似
-corner_radius_top_right = 999 ; 同上
-corner_radius_bottom_right = 999 ; 同上
-corner_radius_bottom_left = 999 ; 同上
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_pressed"]
-content_margin_left = 40 ; 同 normal
-content_margin_top = 27 ; normal 的 23 + PRESS_DROP(4)：按下时文字下沉、底边消失
-content_margin_right = 40 ; 同 normal
-content_margin_bottom = 19 ; normal 的 23 - PRESS_DROP(4)：总高不变，视觉整体下移
-bg_color = Color(1, 0.419608, 0.541176, 1) ; CANDY_PINK #FF6B8A
-corner_radius_top_left = 999 ; 同 normal
-corner_radius_top_right = 999 ; 同 normal
-corner_radius_bottom_right = 999 ; 同 normal
-corner_radius_bottom_left = 999 ; 同 normal
+[gd_resource type="Theme" format=3 uid="uid://cb0kcgnwlb1or"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_disabled"]
-content_margin_left = 40 ; 同 normal，保证禁用时文字不跳位
-content_margin_top = 23 ; 同 normal
-content_margin_right = 40 ; 同 normal
-content_margin_bottom = 23 ; 同 normal
-bg_color = Color(0.960784, 0.913725, 0.835294, 1) ; CREAM_DARK #F5E9D5
-corner_radius_top_left = 999 ; 同 normal
-corner_radius_top_right = 999 ; 同 normal
-corner_radius_bottom_right = 999 ; 同 normal
-corner_radius_bottom_left = 999 ; 同 normal
+content_margin_left = 40.0
+content_margin_top = 23.0
+content_margin_right = 40.0
+content_margin_bottom = 23.0
+bg_color = Color(0.960784, 0.913725, 0.835294, 1)
+corner_radius_top_left = 999
+corner_radius_top_right = 999
+corner_radius_bottom_right = 999
+corner_radius_bottom_left = 999
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_soft_btn_normal"]
-content_margin_left = 40 ; 同 primary button
-content_margin_top = 23 ; 同 primary button
-content_margin_right = 40 ; 同 primary button
-content_margin_bottom = 23 ; 同 primary button
-bg_color = Color(0.960784, 0.913725, 0.835294, 1) ; CREAM_DARK #F5E9D5
-corner_radius_top_left = 999 ; 同 primary button
-corner_radius_top_right = 999 ; 同 primary button
-corner_radius_bottom_right = 999 ; 同 primary button
-corner_radius_bottom_left = 999 ; 同 primary button
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_normal"]
+content_margin_left = 40.0
+content_margin_top = 23.0
+content_margin_right = 40.0
+content_margin_bottom = 23.0
+bg_color = Color(1, 0.419608, 0.541176, 1)
+border_width_bottom = 4
+border_color = Color(0.882353, 0.298039, 0.427451, 1)
+corner_radius_top_left = 999
+corner_radius_top_right = 999
+corner_radius_bottom_right = 999
+corner_radius_bottom_left = 999
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_soft_btn_pressed"]
-content_margin_left = 40 ; 同 normal
-content_margin_top = 27 ; PRESS_DROP(4) 下沉；次按钮无底边，故只上下对挪、总高不变
-content_margin_right = 40 ; 同 normal
-content_margin_bottom = 19 ; 同 normal
-bg_color = Color(0.960784, 0.913725, 0.835294, 1) ; CREAM_DARK #F5E9D5
-corner_radius_top_left = 999 ; 同 normal
-corner_radius_top_right = 999 ; 同 normal
-corner_radius_bottom_right = 999 ; 同 normal
-corner_radius_bottom_left = 999 ; 同 normal
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_pressed"]
+content_margin_left = 40.0
+content_margin_top = 27.0
+content_margin_right = 40.0
+content_margin_bottom = 19.0
+bg_color = Color(1, 0.419608, 0.541176, 1)
+corner_radius_top_left = 999
+corner_radius_top_right = 999
+corner_radius_bottom_right = 999
+corner_radius_bottom_left = 999
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(1, 0.976471, 0.937255, 1)
+corner_radius_top_left = 32
+corner_radius_top_right = 32
+corner_radius_bottom_right = 32
+corner_radius_bottom_left = 32
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bar_background"]
-bg_color = Color(0.960784, 0.913725, 0.835294, 1) ; CREAM_DARK #F5E9D5
-corner_radius_top_left = 999 ; 对应 draw_status_bar 的 size.y*0.5 药丸底槽
-corner_radius_top_right = 999 ; 同上
-corner_radius_bottom_right = 999 ; 同上
-corner_radius_bottom_left = 999 ; 同上
+bg_color = Color(0.960784, 0.913725, 0.835294, 1)
+corner_radius_top_left = 999
+corner_radius_top_right = 999
+corner_radius_bottom_right = 999
+corner_radius_bottom_left = 999
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bar_fill"]
-bg_color = Color(1, 0.419608, 0.541176, 1) ; CANDY_PINK #FF6B8A
-corner_radius_top_left = 999 ; 同 bar background
-corner_radius_top_right = 999 ; 同 bar background
-corner_radius_bottom_right = 999 ; 同 bar background
-corner_radius_bottom_left = 999 ; 同 bar background
+bg_color = Color(1, 0.419608, 0.541176, 1)
+corner_radius_top_left = 999
+corner_radius_top_right = 999
+corner_radius_bottom_right = 999
+corner_radius_bottom_left = 999
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_soft_btn_normal"]
+content_margin_left = 40.0
+content_margin_top = 23.0
+content_margin_right = 40.0
+content_margin_bottom = 23.0
+bg_color = Color(0.960784, 0.913725, 0.835294, 1)
+corner_radius_top_left = 999
+corner_radius_top_right = 999
+corner_radius_bottom_right = 999
+corner_radius_bottom_left = 999
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_soft_btn_pressed"]
+content_margin_left = 40.0
+content_margin_top = 27.0
+content_margin_right = 40.0
+content_margin_bottom = 19.0
+bg_color = Color(0.960784, 0.913725, 0.835294, 1)
+corner_radius_top_left = 999
+corner_radius_top_right = 999
+corner_radius_bottom_right = 999
+corner_radius_bottom_left = 999
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_soft_panel"]
+bg_color = Color(0.960784, 0.913725, 0.835294, 1)
+corner_radius_top_left = 32
+corner_radius_top_right = 32
+corner_radius_bottom_right = 32
+corner_radius_bottom_left = 32
 
 [resource]
-default_font_size = 30 ; FONT_BODY
-Button/colors/font_color = Color(1, 0.976471, 0.937255, 1) ; CREAM #FFF9EF（糖果按钮字色）
-Button/colors/font_hover_color = Color(1, 0.976471, 0.937255, 1) ; CREAM #FFF9EF
-Button/colors/font_pressed_color = Color(1, 0.976471, 0.937255, 1) ; CREAM #FFF9EF
-Button/colors/font_disabled_color = Color(0.627451, 0.545098, 0.486275, 1) ; INK_SOFT #A08B7C（cream_dark 底上唯一可读的弱化字色）
-Button/font_sizes/font_size = 30 ; FONT_BODY
+default_font_size = 30
+Button/colors/font_color = Color(1, 0.976471, 0.937255, 1)
+Button/colors/font_disabled_color = Color(0.627451, 0.545098, 0.486275, 1)
+Button/colors/font_hover_color = Color(1, 0.976471, 0.937255, 1)
+Button/colors/font_pressed_color = Color(1, 0.976471, 0.937255, 1)
+Button/font_sizes/font_size = 30
 Button/styles/disabled = SubResource("StyleBoxFlat_btn_disabled")
-Button/styles/hover = SubResource("StyleBoxFlat_btn_normal") ; hover 无独立设计（触屏优先），沿用 normal
+Button/styles/hover = SubResource("StyleBoxFlat_btn_normal")
 Button/styles/normal = SubResource("StyleBoxFlat_btn_normal")
 Button/styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
-Label/colors/font_color = Color(0.356863, 0.290196, 0.247059, 1) ; INK #5B4A3F
-Label/font_sizes/font_size = 30 ; FONT_BODY
+CountdownLabel/base_type = &"Label"
+CountdownLabel/colors/font_color = Color(1, 0.823529, 0.247059, 1)
+CountdownLabel/colors/font_outline_color = Color(0.356863, 0.290196, 0.247059, 1)
+CountdownLabel/constants/outline_size = 2
+CountdownLabel/font_sizes/font_size = 56
+HintLabel/base_type = &"Label"
+HintLabel/colors/font_color = Color(0.627451, 0.545098, 0.486275, 1)
+HintLabel/font_sizes/font_size = 24
+Label/colors/font_color = Color(0.356863, 0.290196, 0.247059, 1)
+Label/font_sizes/font_size = 30
 Panel/styles/panel = SubResource("StyleBoxFlat_panel")
 PanelContainer/styles/panel = SubResource("StyleBoxFlat_panel")
-ProgressBar/colors/font_color = Color(0.356863, 0.290196, 0.247059, 1) ; INK #5B4A3F（cream_dark 槽上默认字色不可读）
-ProgressBar/font_sizes/font_size = 30 ; FONT_BODY
+ProgressBar/colors/font_color = Color(0.356863, 0.290196, 0.247059, 1)
+ProgressBar/font_sizes/font_size = 30
 ProgressBar/styles/background = SubResource("StyleBoxFlat_bar_background")
 ProgressBar/styles/fill = SubResource("StyleBoxFlat_bar_fill")
-CountdownLabel/base_type = &"Label"
-CountdownLabel/colors/font_color = Color(1, 0.823529, 0.247059, 1) ; LEMON #FFD23F
-CountdownLabel/colors/font_outline_color = Color(0.356863, 0.290196, 0.247059, 1) ; INK #5B4A3F
-CountdownLabel/constants/outline_size = 2 ; 对应 draw_string_outlined 的 outline_width=2.0
-CountdownLabel/font_sizes/font_size = 56 ; FONT_COUNTDOWN
-HintLabel/base_type = &"Label"
-HintLabel/colors/font_color = Color(0.627451, 0.545098, 0.486275, 1) ; INK_SOFT #A08B7C
-HintLabel/font_sizes/font_size = 24 ; FONT_HINT
 SecondaryButton/base_type = &"Button"
-SecondaryButton/colors/font_color = Color(0.356863, 0.290196, 0.247059, 1) ; INK #5B4A3F
-SecondaryButton/colors/font_disabled_color = Color(0.627451, 0.545098, 0.486275, 1) ; INK_SOFT #A08B7C
-SecondaryButton/colors/font_hover_color = Color(0.356863, 0.290196, 0.247059, 1) ; INK #5B4A3F
-SecondaryButton/colors/font_pressed_color = Color(0.356863, 0.290196, 0.247059, 1) ; INK #5B4A3F
-SecondaryButton/font_sizes/font_size = 30 ; FONT_BODY
+SecondaryButton/colors/font_color = Color(0.356863, 0.290196, 0.247059, 1)
+SecondaryButton/colors/font_disabled_color = Color(0.627451, 0.545098, 0.486275, 1)
+SecondaryButton/colors/font_hover_color = Color(0.356863, 0.290196, 0.247059, 1)
+SecondaryButton/colors/font_pressed_color = Color(0.356863, 0.290196, 0.247059, 1)
+SecondaryButton/font_sizes/font_size = 30
 SecondaryButton/styles/disabled = SubResource("StyleBoxFlat_btn_disabled")
-SecondaryButton/styles/hover = SubResource("StyleBoxFlat_soft_btn_normal") ; hover 同 normal，理由同 Button
+SecondaryButton/styles/hover = SubResource("StyleBoxFlat_soft_btn_normal")
 SecondaryButton/styles/normal = SubResource("StyleBoxFlat_soft_btn_normal")
 SecondaryButton/styles/pressed = SubResource("StyleBoxFlat_soft_btn_pressed")
 SoftPanel/base_type = &"PanelContainer"
 SoftPanel/styles/panel = SubResource("StyleBoxFlat_soft_panel")
 TitleLabel/base_type = &"Label"
-TitleLabel/colors/font_color = Color(0.356863, 0.290196, 0.247059, 1) ; INK #5B4A3F
-TitleLabel/font_sizes/font_size = 46 ; FONT_TITLE
+TitleLabel/colors/font_color = Color(0.356863, 0.290196, 0.247059, 1)
+TitleLabel/font_sizes/font_size = 46
